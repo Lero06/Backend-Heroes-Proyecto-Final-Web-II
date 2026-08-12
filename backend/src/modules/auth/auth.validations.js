@@ -13,4 +13,9 @@ const esquemaRegistro = {
   confirmar_password: (v) => typeof v === 'string' && v.length >= 8,
 };
 
-module.exports = { esquemaRegistro };
+const esquemaLogin = {
+  identificador: (v) => typeof v === 'string' && v.trim().length > 0, // usuario o correo
+  password: (v) => typeof v === 'string' && v.length > 0,
+};
+
+module.exports = { esquemaRegistro, esquemaLogin };

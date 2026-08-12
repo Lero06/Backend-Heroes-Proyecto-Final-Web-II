@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { ok, error } = require('../../utils/response');
+const { crearSesion, SESSION_COOKIE } = require('../../utils/session');
 const authModel = require('./auth.model');
 
 const SALT_ROUNDS = 10;
@@ -54,4 +55,36 @@ async function registrar(req, res, next) {
   }
 }
 
-module.exports = { registrar };
+async function login(req, res, next) {
+  try {
+    const { identificador, password } = req.body; // usuario o correo
+
+    const usuario = await authModel.buscarParaLogin(identificador);
+
+    // Mensaje generico: no revela si fallo el usuario o la contrasena
+    if (!usuario) return error(res, 'Credenciales invalidas', 401);
+    if (!usuario.activo) return error(res, 'La cuenta se encuentra inactiva', 403);
+
+    const passwordValido = await bcrypt.compare(password, usuario.password_hash);
+    if (!passwordValido) return error(res, 'Credenciales invalidas', 401);
+
+    const { id: sessionId, expiraEn } = await crearSesion(usuario.id, req);
+
+    res.cookie(SESSION_COOKIE, sessionId, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      expires: expiraEn,
+    });
+
+    return ok(
+      res,
+      { id: usuario.id, usuario: usuario.usuario, correo: usuario.correo, rol: usuario.rol },
+      'Inicio de sesion exitoso'
+    );
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { registrar, login };

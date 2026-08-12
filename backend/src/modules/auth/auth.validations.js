@@ -8,10 +8,11 @@ Fecha: 12/08/2026
 Modulo: Autenticacion y Usuarios
 Descripcion:
 Esquemas de validacion de formato/presencia para los endpoints del
-modulo de autenticacion (registro y login). Las reglas de negocio que
-necesitan consultar la base de datos o comparar varios campos entre si
-(correo/usuario duplicado, confirmacion de contrasena) se revisan en
-el controlador, no aqui.
+modulo de autenticacion (registro, login y recuperacion de
+contrasena). Las reglas de negocio que necesitan consultar la base de
+datos o comparar varios campos entre si (correo/usuario duplicado,
+confirmacion de contrasena, validez del token) se revisan en el
+controlador, no aqui.
 //////////////////////////////////////////////////////////
 */
 
@@ -44,4 +45,20 @@ const esquemaLogin = {
   password: (v) => typeof v === 'string' && v.length > 0,
 };
 
-module.exports = { esquemaRegistro, esquemaLogin };
+/**
+ * Esquema de validacion para solicitar la recuperacion de contrasena.
+ */
+const esquemaRecuperarPassword = {
+  identificador: (v) => typeof v === 'string' && v.trim().length > 0,
+};
+
+/**
+ * Esquema de validacion para restablecer la contrasena con un token.
+ */
+const esquemaRestablecerPassword = {
+  token: (v) => typeof v === 'string' && v.trim().length > 0,
+  password_nueva: (v) => typeof v === 'string' && v.length >= 8,
+  confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,
+};
+
+module.exports = { esquemaRegistro, esquemaLogin, esquemaRecuperarPassword, esquemaRestablecerPassword };

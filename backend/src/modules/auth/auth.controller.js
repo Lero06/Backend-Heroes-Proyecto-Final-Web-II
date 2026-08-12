@@ -7,10 +7,10 @@ Autor: Leandro Sanchez Rojas
 Fecha: 12/08/2026
 Modulo: Autenticacion y Usuarios
 Descripcion:
-Logica de negocio del modulo de autenticacion: registro de usuarios,
-inicio y cierre de sesion. Recibe las peticiones desde auth.routes.js,
-usa auth.model.js para el acceso a datos y utils/session.js para
-crear/destruir la sesion del usuario.
+Logica de negocio del modulo de autenticacion: registro, login,
+logout, y recuperacion/restablecimiento de contrasena por token.
+Recibe las peticiones desde auth.routes.js, usa auth.model.js para
+el acceso a datos y utils/session.js para crear/destruir la sesion.
 //////////////////////////////////////////////////////////
 */
 
@@ -21,6 +21,7 @@ IMPORTS
 */
 
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { ok, error } = require('../../utils/response');
 const { crearSesion, destruirSesion, SESSION_COOKIE } = require('../../utils/session');
 const authModel = require('./auth.model');
@@ -33,6 +34,7 @@ CONSTANTES
 
 const SALT_ROUNDS = 10;
 const ROL_POR_DEFECTO = 'usuario';
+const RECUPERACION_TOKEN_MIN = Number(process.env.RECUPERACION_TOKEN_MIN || 30);
 
 /*
 //////////////////////////////////////////////////////////
@@ -166,4 +168,82 @@ async function logout(req, res, next) {
   }
 }
 
-module.exports = { registrar, login, logout };
+module.exports = { registrar, login, logout, recuperarPassword, restablecerPassword };
+
+/**
+ * Solicita la recuperacion de contrasena. Genera un token temporal de
+ * un solo uso y lo guarda en tokens_recuperacion. Por seguridad,
+ * responde el mismo mensaje exista o no el usuario, para no revelar
+ * si un correo/usuario esta registrado en el sistema.
+ * @param {object} req - Request de Express (req.body.identificador: usuario o correo).
+ * @param {object} res - Response de Express.
+ * @param {Function} next - Siguiente middleware (manejo de errores).
+ * @returns {Promise<object>} Respuesta HTTP generica de confirmacion.
+ */
+async function recuperarPassword(req, res, next) {
+  try {
+    const { identificador } = req.body;
+
+    const usuario = await authModel.buscarPorIdentificador(identificador);
+
+    // No revelar si el usuario existe o no (mismo mensaje en ambos casos)
+    const mensajeGenerico =
+      'Si el usuario existe, se genero un enlace de recuperacion valido por ' +
+      `${RECUPERACION_TOKEN_MIN} minutos`;
+
+    if (!usuario || !usuario.activo) {
+      return ok(res, null, mensajeGenerico);
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiraEn = new Date(Date.now() + RECUPERACION_TOKEN_MIN * 60 * 1000);
+
+    await authModel.crearTokenRecuperacion(usuario.id, token, expiraEn);
+
+    // NOTA: aqui se conectaria el envio real por correo (ej. Nodemailer).
+    // Mientras tanto, se devuelve el enlace en la respuesta para poder
+    // probar el flujo completo desde Postman/Thunder Client.
+    const enlace = `http://localhost:5173/restablecer-password?token=${token}`;
+
+    return ok(res, { enlace }, mensajeGenerico);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Restablece la contrasena usando un token de recuperacion valido.
+ * El token debe existir, no estar usado y no haber expirado. Al
+ * usarse correctamente, se marca como usado para que no pueda
+ * reutilizarse (regla de "un solo uso" exigida por la guia).
+ * @param {object} req - Request de Express (req.body: token, password_nueva, confirmar_password_nueva).
+ * @param {object} res - Response de Express.
+ * @param {Function} next - Siguiente middleware (manejo de errores).
+ * @returns {Promise<object>} Respuesta HTTP confirmando el restablecimiento.
+ */
+async function restablecerPassword(req, res, next) {
+  try {
+    const { token, password_nueva, confirmar_password_nueva } = req.body;
+
+    if (password_nueva !== confirmar_password_nueva) {
+      return error(res, 'La nueva contrasena y su confirmacion no coinciden', 400);
+    }
+
+    const registroToken = await authModel.buscarTokenRecuperacion(token);
+
+    if (!registroToken) return error(res, 'El token de recuperacion no es valido', 400);
+    if (registroToken.usado) return error(res, 'Este token ya fue utilizado', 400);
+    if (new Date(registroToken.expira_en) < new Date()) {
+      return error(res, 'El token de recuperacion ha expirado', 400);
+    }
+
+    const nuevoHash = await bcrypt.hash(password_nueva, SALT_ROUNDS);
+
+    await authModel.actualizarPasswordUsuario(registroToken.usuario_id, nuevoHash);
+    await authModel.marcarTokenUsado(registroToken.id);
+
+    return ok(res, null, 'Contrasena restablecida correctamente');
+  } catch (err) {
+    next(err);
+  }
+}

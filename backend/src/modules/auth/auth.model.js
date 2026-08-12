@@ -67,6 +67,71 @@ async function buscarParaLogin(identificador) {
 }
 
 /**
+ * Busca un usuario por usuario o correo para el flujo de recuperacion
+ * de contrasena (no incluye el hash, no hace falta en este flujo).
+ * @param {string} identificador - Usuario o correo ingresado.
+ * @returns {Promise<object|null>} Datos basicos del usuario, o null si no existe.
+ */
+async function buscarPorIdentificador(identificador) {
+  const [rows] = await pool.query(
+    'SELECT id, usuario, correo, activo FROM usuarios WHERE usuario = ? OR correo = ? LIMIT 1',
+    [identificador, identificador]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Guarda un token de recuperacion de contrasena para un usuario.
+ * @param {number} usuarioId - Id del usuario que solicito la recuperacion.
+ * @param {string} token - Token generado (aleatorio, un solo uso).
+ * @param {Date} expiraEn - Fecha/hora de expiracion del token.
+ * @returns {Promise<number>} Id del registro creado en tokens_recuperacion.
+ */
+async function crearTokenRecuperacion(usuarioId, token, expiraEn) {
+  const [result] = await pool.query(
+    'INSERT INTO tokens_recuperacion (usuario_id, token, expira_en) VALUES (?, ?, ?)',
+    [usuarioId, token, expiraEn]
+  );
+  return result.insertId;
+}
+
+/**
+ * Busca un token de recuperacion por su valor y verifica que exista.
+ * La validacion de expiracion y de uso se hace en el controlador,
+ * porque ahi se decide el mensaje exacto para cada caso.
+ * @param {string} token - Token recibido en el enlace de recuperacion.
+ * @returns {Promise<object|null>} El registro del token, o null si no existe.
+ */
+async function buscarTokenRecuperacion(token) {
+  const [rows] = await pool.query(
+    'SELECT id, usuario_id, usado, expira_en FROM tokens_recuperacion WHERE token = ?',
+    [token]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Marca un token de recuperacion como usado, para que no pueda
+ * reutilizarse (regla de "un solo uso" que exige la guia).
+ * @param {number} id - Id del registro en tokens_recuperacion.
+ * @returns {Promise<void>}
+ */
+async function marcarTokenUsado(id) {
+  await pool.query('UPDATE tokens_recuperacion SET usado = 1 WHERE id = ?', [id]);
+}
+
+/**
+ * Actualiza el hash de contrasena de un usuario (usado al restablecer
+ * por token, sin requerir la contrasena anterior).
+ * @param {number} usuarioId - Id del usuario.
+ * @param {string} passwordHash - Nuevo hash generado con bcrypt.
+ * @returns {Promise<void>}
+ */
+async function actualizarPasswordUsuario(usuarioId, passwordHash) {
+  await pool.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [passwordHash, usuarioId]);
+}
+
+/**
  * Obtiene el id de un rol a partir de su nombre (ej. 'usuario', 'administrador').
  * @param {string} nombre - Nombre del rol.
  * @returns {Promise<number|null>} Id del rol, o null si no existe.
@@ -110,6 +175,11 @@ module.exports = {
   buscarPorCorreo,
   buscarPorUsuario,
   buscarParaLogin,
+  buscarPorIdentificador,
   obtenerRolIdPorNombre,
   crearUsuario,
+  crearTokenRecuperacion,
+  buscarTokenRecuperacion,
+  marcarTokenUsado,
+  actualizarPasswordUsuario,
 };

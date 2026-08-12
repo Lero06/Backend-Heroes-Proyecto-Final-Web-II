@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Cada integrante monta su módulo aquí cuando lo tenga listo:
-// app.use('/api/auth', require('./modules/auth/auth.routes'));
+app.use('/api/auth', require('./modules/auth/auth.routes'));
 // app.use('/api/usuarios', require('./modules/usuarios/usuarios.routes'));
 // app.use('/api/marcas', require('./modules/marcas/marcas.routes'));
 // app.use('/api/equipos', require('./modules/equipos/equipos.routes'));

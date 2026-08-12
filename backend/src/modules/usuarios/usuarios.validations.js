@@ -29,4 +29,13 @@ const esquemaActualizarPerfil = {
   departamento_id: (v) => v !== undefined && v !== null && Number.isInteger(Number(v)),
 };
 
-module.exports = { esquemaActualizarPerfil };
+/**
+ * Esquema de validacion para cambiar la contrasena propia.
+ */
+const esquemaCambiarPassword = {
+  password_actual: (v) => typeof v === 'string' && v.length > 0,
+  password_nueva: (v) => typeof v === 'string' && v.length >= 8,
+  confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,
+};
+
+module.exports = { esquemaActualizarPerfil, esquemaCambiarPassword };

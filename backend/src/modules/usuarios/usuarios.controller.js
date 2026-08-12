@@ -7,10 +7,11 @@ Autor: Leandro Sanchez Rojas
 Fecha: 12/08/2026
 Modulo: Usuarios (Perfil)
 Descripcion:
-Logica de negocio para ver y editar el perfil del usuario autenticado.
-Ambos endpoints requieren sesion activa (ver usuarios.routes.js) y
-operan siempre sobre req.usuario.id, nunca sobre un id recibido por
-parametro, para que un usuario no pueda editar el perfil de otro.
+Logica de negocio para ver/editar el perfil y cambiar la contrasena
+del usuario autenticado. Todos los endpoints requieren sesion activa
+(ver usuarios.routes.js) y operan siempre sobre req.usuario.id, nunca
+sobre un id recibido por parametro, para que un usuario no pueda
+modificar los datos de otro.
 //////////////////////////////////////////////////////////
 */
 
@@ -20,8 +21,11 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
+const bcrypt = require('bcryptjs');
 const { ok, error } = require('../../utils/response');
 const usuariosModel = require('./usuarios.model');
+
+const SALT_ROUNDS = 10;
 
 /*
 //////////////////////////////////////////////////////////
@@ -79,4 +83,40 @@ async function actualizarPerfil(req, res, next) {
   }
 }
 
-module.exports = { verPerfil, actualizarPerfil };
+module.exports = { verPerfil, actualizarPerfil, cambiarPassword };
+
+/**
+ * Cambia la contrasena del usuario autenticado.
+ * Requiere la contrasena actual (se valida contra el hash guardado
+ * antes de aplicar el cambio) y la confirmacion de la nueva.
+ * @param {object} req - Request de Express (req.usuario.id y req.body).
+ * @param {object} res - Response de Express.
+ * @param {Function} next - Siguiente middleware (manejo de errores).
+ * @returns {Promise<object>} Respuesta HTTP confirmando el cambio.
+ */
+async function cambiarPassword(req, res, next) {
+  try {
+    const { password_actual, password_nueva, confirmar_password_nueva } = req.body;
+
+    if (password_nueva !== confirmar_password_nueva) {
+      return error(res, 'La nueva contrasena y su confirmacion no coinciden', 400);
+    }
+
+    const hashActual = await usuariosModel.obtenerPasswordHashPorId(req.usuario.id);
+    if (!hashActual) return error(res, 'Usuario no encontrado', 404);
+
+    const passwordActualValida = await bcrypt.compare(password_actual, hashActual);
+    if (!passwordActualValida) return error(res, 'La contrasena actual es incorrecta', 401);
+
+    if (password_actual === password_nueva) {
+      return error(res, 'La nueva contrasena debe ser diferente a la actual', 400);
+    }
+
+    const nuevoHash = await bcrypt.hash(password_nueva, SALT_ROUNDS);
+    await usuariosModel.actualizarPassword(req.usuario.id, nuevoHash);
+
+    return ok(res, null, 'Contrasena actualizada correctamente');
+  } catch (err) {
+    next(err);
+  }
+}

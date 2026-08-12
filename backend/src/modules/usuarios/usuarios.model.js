@@ -66,4 +66,34 @@ async function actualizarPerfil(id, { nombre_completo, fecha_nacimiento, departa
   return result.affectedRows > 0;
 }
 
-module.exports = { obtenerPerfilPorId, actualizarPerfil };
+/**
+ * Obtiene el hash de contrasena actual de un usuario (para validar el
+ * cambio de contrasena).
+ * @param {number} id - Id del usuario.
+ * @returns {Promise<string|null>} El password_hash almacenado, o null si no existe.
+ */
+async function obtenerPasswordHashPorId(id) {
+  const [rows] = await pool.query('SELECT password_hash FROM usuarios WHERE id = ?', [id]);
+  return rows[0]?.password_hash || null;
+}
+
+/**
+ * Actualiza el hash de contrasena de un usuario.
+ * @param {number} id - Id del usuario.
+ * @param {string} passwordHash - Nuevo hash generado con bcrypt.
+ * @returns {Promise<boolean>} true si se modifico algun registro.
+ */
+async function actualizarPassword(id, passwordHash) {
+  const [result] = await pool.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [
+    passwordHash,
+    id,
+  ]);
+  return result.affectedRows > 0;
+}
+
+module.exports = {
+  obtenerPerfilPorId,
+  actualizarPerfil,
+  obtenerPasswordHashPorId,
+  actualizarPassword,
+};

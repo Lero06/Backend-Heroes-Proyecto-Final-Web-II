@@ -7,9 +7,9 @@ Autor: Leandro Sanchez Rojas
 Fecha: 12/08/2026
 Modulo: Usuarios (Perfil)
 Descripcion:
-Define los endpoints del perfil del usuario autenticado. Ambas rutas
-requieren sesion activa. Este router se monta en app.js bajo el
-prefijo /api/usuarios.
+Define los endpoints del perfil y del cambio de contrasena del usuario
+autenticado. Todas las rutas requieren sesion activa. Este router se
+monta en app.js bajo el prefijo /api/usuarios.
 //////////////////////////////////////////////////////////
 */
 
@@ -24,8 +24,8 @@ const router = express.Router();
 
 const validar = require('../../middlewares/validate.middleware');
 const verificarSesion = require('../../middlewares/auth.middleware');
-const { esquemaActualizarPerfil } = require('./usuarios.validations');
-const { verPerfil, actualizarPerfil } = require('./usuarios.controller');
+const { esquemaActualizarPerfil, esquemaCambiarPassword } = require('./usuarios.validations');
+const { verPerfil, actualizarPerfil, cambiarPassword } = require('./usuarios.controller');
 
 /*
 //////////////////////////////////////////////////////////
@@ -35,7 +35,6 @@ RUTAS
 
 router.get('/perfil', verificarSesion, verPerfil);
 router.put('/perfil', verificarSesion, validar(esquemaActualizarPerfil), actualizarPerfil);
-
-// Proximo commit: /cambiar-password
+router.put('/cambiar-password', verificarSesion, validar(esquemaCambiarPassword), cambiarPassword);
 
 module.exports = router;

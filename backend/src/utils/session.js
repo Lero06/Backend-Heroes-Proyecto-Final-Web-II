@@ -1,13 +1,50 @@
-// Manejo de sesiones respaldado en la tabla `sesiones` (no usa memoria del
-// servidor, así que sobrevive a reinicios y funciona igual en varios
-// procesos). Cualquier módulo puede usar estas funciones.
+/*
+//////////////////////////////////////////////////////////
+CABEZA DE ARCHIVO
+//////////////////////////////////////////////////////////
+Archivo: session.js
+Autor: Leandro Sanchez Rojas
+Fecha: 12/08/2026
+Modulo: Autenticacion / Sesiones
+Descripcion:
+Manejo de sesiones respaldado en la tabla `sesiones` de MySQL (no usa
+memoria del servidor, por lo que sobrevive a reinicios y funciona
+igual con varios procesos). Cualquier modulo del proyecto puede usar
+estas funciones para crear, consultar o destruir una sesion.
+//////////////////////////////////////////////////////////
+*/
+
+/*
+//////////////////////////////////////////////////////////
+IMPORTS
+//////////////////////////////////////////////////////////
+*/
 
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../config/db');
 
+/*
+//////////////////////////////////////////////////////////
+CONSTANTES
+//////////////////////////////////////////////////////////
+*/
+
 const SESSION_COOKIE = 'sid';
 const DEFAULT_MAX_AGE_MIN = Number(process.env.SESSION_MAX_AGE_MIN || 120);
 
+/*
+//////////////////////////////////////////////////////////
+FUNCIONES PRINCIPALES
+//////////////////////////////////////////////////////////
+*/
+
+/**
+ * Crea una nueva sesion para un usuario autenticado y la guarda en la
+ * tabla `sesiones`.
+ * @param {number} usuarioId - Id del usuario que inicio sesion.
+ * @param {object} req - Objeto request de Express (se usa para IP y user-agent).
+ * @returns {Promise<{id: string, expiraEn: Date}>} Id de la sesion creada y su fecha de expiracion.
+ */
 async function crearSesion(usuarioId, req) {
   const id = uuidv4();
   const expiraEn = new Date(Date.now() + DEFAULT_MAX_AGE_MIN * 60 * 1000);
@@ -20,6 +57,12 @@ async function crearSesion(usuarioId, req) {
   return { id, expiraEn };
 }
 
+/**
+ * Busca una sesion por su id y valida que no haya expirado.
+ * Si la sesion esta expirada, la elimina automaticamente y retorna null.
+ * @param {string} id - Id de la sesion (valor de la cookie `sid`).
+ * @returns {Promise<object|null>} Datos de la sesion junto con el usuario y su rol, o null si no es valida.
+ */
 async function obtenerSesion(id) {
   const [rows] = await pool.query(
     `SELECT s.id, s.usuario_id, s.expira_en,
@@ -42,6 +85,11 @@ async function obtenerSesion(id) {
   return sesion;
 }
 
+/**
+ * Elimina una sesion de la base de datos (usado en logout o cuando expira).
+ * @param {string} id - Id de la sesion a destruir.
+ * @returns {Promise<void>}
+ */
 async function destruirSesion(id) {
   await pool.query('DELETE FROM sesiones WHERE id = ?', [id]);
 }

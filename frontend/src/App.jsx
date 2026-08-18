@@ -29,6 +29,7 @@ import Registro from './pages/Registro';
 import RecuperarPassword from './pages/RecuperarPassword';
 import RestablecerPassword from './pages/RestablecerPassword';
 import Perfil from './pages/Perfil';
+import Reportes from './pages/Reportes'; 
 
 /*
 //////////////////////////////////////////////////////////
@@ -46,7 +47,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/perfil" replace />} />
+      <Route path="/" element={<Navigate to="/reportes" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/recuperar-password" element={<RecuperarPassword />} />
@@ -61,6 +62,7 @@ export default function App() {
       />
 
       {/* Cada integrante agrega aqui las rutas de su modulo */}
+      <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
       {/* <Route path="/marcas" element={<RutaProtegida><Marcas /></RutaProtegida>} /> */}
       {/* <Route path="/equipos" element={<RutaProtegida><Equipos /></RutaProtegida>} /> */}
       {/* <Route path="/prestamos" element={<RutaProtegida><Prestamos /></RutaProtegida>} /> */}

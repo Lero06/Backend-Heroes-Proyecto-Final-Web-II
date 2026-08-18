@@ -48,6 +48,7 @@ RUTAS DE CADA MODULO
 app.use('/api/auth', require('./modules/auth/auth.routes'));
 app.use('/api/departamentos', require('./modules/departamentos/departamentos.routes'));
 app.use('/api/usuarios', require('./modules/usuarios/usuarios.routes'));
+app.use('/api/reportes', require('./modules/reportes/reportes.routes')); 
 // app.use('/api/marcas', require('./modules/marcas/marcas.routes'));
 // app.use('/api/equipos', require('./modules/equipos/equipos.routes'));
 // app.use('/api/prestamos', require('./modules/prestamos/prestamos.routes'));

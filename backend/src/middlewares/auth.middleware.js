@@ -3,14 +3,15 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: auth.middleware.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Middlewares
 Descripcion:
 Middleware que protege rutas verificando que exista una sesion valida.
 Cada integrante del equipo debe importar este middleware en sus propias
 rutas para requerir que el usuario este autenticado.
 Uso: router.get('/perfil', verificarSesion, controlador);
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -38,7 +39,7 @@ FUNCION PRINCIPAL
  * @param {Function} next - Siguiente middleware/controlador.
  * @returns {Promise<void>}
  */
-async function verificarSesion(req, res, next) {
+export async function verificarSesion(req, res, next) {
   const sid = req.cookies?.[SESSION_COOKIE];
   if (!sid) return error(res, 'No autenticado', 401);
 

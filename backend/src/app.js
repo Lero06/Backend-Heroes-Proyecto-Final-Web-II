@@ -3,13 +3,14 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: app.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM y actualizado por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
 Configuracion central de la aplicacion Express: middlewares globales,
-montaje de las rutas de cada modulo y manejador de errores. Cada
-integrante del equipo agrega aqui su propio router cuando lo tenga listo.
+montaje de las rutas de cada modulo (incluidos Marcas y Dispositivos) y
+manejador de errores centralizado.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -19,7 +20,9 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -33,7 +36,7 @@ import departamentosRoutes from './modules/departamentos/departamentos.routes.js
 import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
 import equiposRoutes from './modules/equipos/equipos.routes.js';
-// import marcasRoutes from './modules/marcas/marcas.routes.js';
+import marcasRoutes from './modules/marcas/marcas.routes.js';
 // import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
 // import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 
@@ -68,7 +71,8 @@ app.use('/api/departamentos', departamentosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/equipos', equiposRoutes);
-// app.use('/api/marcas', marcasRoutes);
+app.use('/api/dispositivos', dispositivosRoutes);
+app.use('/api/marcas', marcasRoutes);
 // app.use('/api/prestamos', prestamosRoutes);
 // app.use('/api/configuracion', configuracionRoutes);
 

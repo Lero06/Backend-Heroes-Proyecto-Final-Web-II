@@ -32,7 +32,7 @@ FUNCIONES DE ACCESO A DATOS
  * @param {number} id - Id del usuario.
  * @returns {Promise<object|null>} Datos del perfil o null si no existe.
  */
-async function obtenerPerfilPorId(id) {
+export async function obtenerPerfilPorId(id) {
   const [rows] = await pool.query(
     `SELECT u.id, u.nombre_completo, u.fecha_nacimiento, u.correo, u.usuario,
             u.departamento_id, d.nombre AS departamento, r.nombre AS rol,
@@ -56,7 +56,7 @@ async function obtenerPerfilPorId(id) {
  * @param {number} datos.departamento_id - Id del nuevo departamento.
  * @returns {Promise<boolean>} true si se modifico algun registro.
  */
-async function actualizarPerfil(id, { nombre_completo, fecha_nacimiento, departamento_id }) {
+export async function actualizarPerfil(id, { nombre_completo, fecha_nacimiento, departamento_id }) {
   const [result] = await pool.query(
     `UPDATE usuarios
      SET nombre_completo = ?, fecha_nacimiento = ?, departamento_id = ?
@@ -72,7 +72,7 @@ async function actualizarPerfil(id, { nombre_completo, fecha_nacimiento, departa
  * @param {number} id - Id del usuario.
  * @returns {Promise<string|null>} El password_hash almacenado, o null si no existe.
  */
-async function obtenerPasswordHashPorId(id) {
+export async function obtenerPasswordHashPorId(id) {
   const [rows] = await pool.query('SELECT password_hash FROM usuarios WHERE id = ?', [id]);
   return rows[0]?.password_hash || null;
 }
@@ -83,7 +83,7 @@ async function obtenerPasswordHashPorId(id) {
  * @param {string} passwordHash - Nuevo hash generado con bcrypt.
  * @returns {Promise<boolean>} true si se modifico algun registro.
  */
-async function actualizarPassword(id, passwordHash) {
+export async function actualizarPassword(id, passwordHash) {
   const [result] = await pool.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [
     passwordHash,
     id,

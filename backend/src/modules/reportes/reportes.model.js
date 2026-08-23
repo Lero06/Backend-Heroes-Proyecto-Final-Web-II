@@ -114,8 +114,3 @@ export async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, depart
   const [rows] = await pool.query(sql, valores);
   return rows;
 }
-<<<<<<< HEAD
-
-export { obtenerMarcasFiltradas };
-=======
->>>>>>> marco-backend

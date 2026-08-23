@@ -16,6 +16,7 @@ formatos: JSON, XML y PDF.
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { obtenerLinksNav } from '../utils/navLinks';
 import { apiFetch } from '../api/client.js';
 import {
   obtenerReporte,

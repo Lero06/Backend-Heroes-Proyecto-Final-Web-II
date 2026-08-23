@@ -168,8 +168,6 @@ export async function logout(req, res, next) {
   }
 }
 
-export { registrar, login, logout, recuperarPassword, restablecerPassword };
-
 /**
  * Solicita la recuperacion de contrasena. Genera un token temporal de
  * un solo uso y lo guarda en tokens_recuperacion. Por seguridad,

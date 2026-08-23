@@ -140,5 +140,3 @@ export async function eliminar(req, res, next) {
     next(err);
   }
 }
-
-export { listar, obtenerUno, crear, actualizar, eliminar };

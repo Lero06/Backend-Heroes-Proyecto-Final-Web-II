@@ -32,7 +32,6 @@ import Reportes from './pages/Reportes';
 import Equipos from './pages/Equipos';
 import EquipoForm from './pages/EquipoForm';
 import Inicio from './pages/Inicio';
-import Reportes from './pages/Reportes'; 
 import Marcas from './pages/Marcas';
 
 /*

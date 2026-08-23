@@ -83,8 +83,6 @@ export async function actualizarPerfil(req, res, next) {
   }
 }
 
-export { verPerfil, actualizarPerfil, cambiarPassword };
-
 /**
  * Cambia la contrasena del usuario autenticado.
  * Requiere la contrasena actual (se valida contra el hash guardado

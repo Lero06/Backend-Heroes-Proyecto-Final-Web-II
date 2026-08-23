@@ -37,6 +37,7 @@ import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
 import equiposRoutes from './modules/equipos/equipos.routes.js';
 import marcasRoutes from './modules/marcas/marcas.routes.js';
+import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js'
 // import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
 // import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 

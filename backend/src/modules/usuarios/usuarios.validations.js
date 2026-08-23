@@ -37,5 +37,3 @@ export const esquemaCambiarPassword = {
   password_nueva: (v) => typeof v === 'string' && v.length >= 8,
   confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,
 };
-
-export { esquemaActualizarPerfil, esquemaCambiarPassword };

@@ -42,8 +42,3 @@ export const esquemaFiltrosReporte = {
   mes:         esNumericoOpcional,
   dia:         esNumericoOpcional,
 };
-<<<<<<< HEAD
-
-export { esquemaFiltrosReporte };
-=======
->>>>>>> marco-backend

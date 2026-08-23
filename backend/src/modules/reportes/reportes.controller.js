@@ -267,4 +267,3 @@ export async function exportarPDF(req, res, next) {
   }
 }
 
-export { listarReporte, exportarJSON, exportarXML, exportarPDF };

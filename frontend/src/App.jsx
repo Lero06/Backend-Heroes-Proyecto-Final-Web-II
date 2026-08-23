@@ -3,13 +3,12 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: App.jsx
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Actualizado por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Frontend - Arquitectura Base
 Descripcion:
-Define las rutas de la aplicacion. Cada integrante agrega aqui las
-paginas de su modulo (marcas, equipos, prestamos, reportes) cuando
-las tenga listas.
+Define las rutas de la aplicacion. Conecta la pagina de Marcas & Dispositivos
+(/marcas) protegida con el wrapper RutaProtegida.
 //////////////////////////////////////////////////////////
 */
 
@@ -30,6 +29,7 @@ import RecuperarPassword from './pages/RecuperarPassword';
 import RestablecerPassword from './pages/RestablecerPassword';
 import Perfil from './pages/Perfil';
 import Reportes from './pages/Reportes'; 
+import Marcas from './pages/Marcas';
 
 /*
 //////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ export default function App() {
 
       {/* Cada integrante agrega aqui las rutas de su modulo */}
       <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
-      {/* <Route path="/marcas" element={<RutaProtegida><Marcas /></RutaProtegida>} /> */}
+      <Route path="/marcas" element={<RutaProtegida><Marcas /></RutaProtegida>} />
       {/* <Route path="/equipos" element={<RutaProtegida><Equipos /></RutaProtegida>} /> */}
       {/* <Route path="/prestamos" element={<RutaProtegida><Prestamos /></RutaProtegida>} /> */}
     </Routes>

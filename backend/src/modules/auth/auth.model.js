@@ -20,7 +20,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ FUNCIONES DE ACCESO A DATOS
  * @param {string} correo - Correo a buscar.
  * @returns {Promise<object|null>} El usuario encontrado (solo id) o null.
  */
-async function buscarPorCorreo(correo) {
+export async function buscarPorCorreo(correo) {
   const [rows] = await pool.query('SELECT id FROM usuarios WHERE correo = ?', [correo]);
   return rows[0] || null;
 }
@@ -43,7 +43,7 @@ async function buscarPorCorreo(correo) {
  * @param {string} usuario - Nombre de usuario a buscar.
  * @returns {Promise<object|null>} El usuario encontrado (solo id) o null.
  */
-async function buscarPorUsuario(usuario) {
+export async function buscarPorUsuario(usuario) {
   const [rows] = await pool.query('SELECT id FROM usuarios WHERE usuario = ?', [usuario]);
   return rows[0] || null;
 }
@@ -54,7 +54,7 @@ async function buscarPorUsuario(usuario) {
  * @param {string} identificador - Usuario o correo ingresado en el login.
  * @returns {Promise<object|null>} Usuario con password_hash y rol, o null si no existe.
  */
-async function buscarParaLogin(identificador) {
+export async function buscarParaLogin(identificador) {
   const [rows] = await pool.query(
     `SELECT u.id, u.usuario, u.correo, u.password_hash, u.rol_id, u.activo, r.nombre AS rol
      FROM usuarios u
@@ -72,7 +72,7 @@ async function buscarParaLogin(identificador) {
  * @param {string} identificador - Usuario o correo ingresado.
  * @returns {Promise<object|null>} Datos basicos del usuario, o null si no existe.
  */
-async function buscarPorIdentificador(identificador) {
+export async function buscarPorIdentificador(identificador) {
   const [rows] = await pool.query(
     'SELECT id, usuario, correo, activo FROM usuarios WHERE usuario = ? OR correo = ? LIMIT 1',
     [identificador, identificador]
@@ -87,7 +87,7 @@ async function buscarPorIdentificador(identificador) {
  * @param {Date} expiraEn - Fecha/hora de expiracion del token.
  * @returns {Promise<number>} Id del registro creado en tokens_recuperacion.
  */
-async function crearTokenRecuperacion(usuarioId, token, expiraEn) {
+export async function crearTokenRecuperacion(usuarioId, token, expiraEn) {
   const [result] = await pool.query(
     'INSERT INTO tokens_recuperacion (usuario_id, token, expira_en) VALUES (?, ?, ?)',
     [usuarioId, token, expiraEn]
@@ -102,7 +102,7 @@ async function crearTokenRecuperacion(usuarioId, token, expiraEn) {
  * @param {string} token - Token recibido en el enlace de recuperacion.
  * @returns {Promise<object|null>} El registro del token, o null si no existe.
  */
-async function buscarTokenRecuperacion(token) {
+export async function buscarTokenRecuperacion(token) {
   const [rows] = await pool.query(
     'SELECT id, usuario_id, usado, expira_en FROM tokens_recuperacion WHERE token = ?',
     [token]
@@ -116,7 +116,7 @@ async function buscarTokenRecuperacion(token) {
  * @param {number} id - Id del registro en tokens_recuperacion.
  * @returns {Promise<void>}
  */
-async function marcarTokenUsado(id) {
+export async function marcarTokenUsado(id) {
   await pool.query('UPDATE tokens_recuperacion SET usado = 1 WHERE id = ?', [id]);
 }
 
@@ -127,7 +127,7 @@ async function marcarTokenUsado(id) {
  * @param {string} passwordHash - Nuevo hash generado con bcrypt.
  * @returns {Promise<void>}
  */
-async function actualizarPasswordUsuario(usuarioId, passwordHash) {
+export async function actualizarPasswordUsuario(usuarioId, passwordHash) {
   await pool.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [passwordHash, usuarioId]);
 }
 
@@ -136,7 +136,7 @@ async function actualizarPasswordUsuario(usuarioId, passwordHash) {
  * @param {string} nombre - Nombre del rol.
  * @returns {Promise<number|null>} Id del rol, o null si no existe.
  */
-async function obtenerRolIdPorNombre(nombre) {
+export async function obtenerRolIdPorNombre(nombre) {
   const [rows] = await pool.query('SELECT id FROM roles WHERE nombre = ?', [nombre]);
   return rows[0]?.id || null;
 }
@@ -153,7 +153,7 @@ async function obtenerRolIdPorNombre(nombre) {
  * @param {number} datos.rol_id - Id del rol asignado por defecto.
  * @returns {Promise<number>} Id del usuario recien creado.
  */
-async function crearUsuario({
+export async function crearUsuario({
   nombre_completo,
   fecha_nacimiento,
   correo,
@@ -170,16 +170,3 @@ async function crearUsuario({
   );
   return result.insertId;
 }
-
-module.exports = {
-  buscarPorCorreo,
-  buscarPorUsuario,
-  buscarParaLogin,
-  buscarPorIdentificador,
-  obtenerRolIdPorNombre,
-  crearUsuario,
-  crearTokenRecuperacion,
-  buscarTokenRecuperacion,
-  marcarTokenUsado,
-  actualizarPasswordUsuario,
-};

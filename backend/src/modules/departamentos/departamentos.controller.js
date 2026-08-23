@@ -21,8 +21,8 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { ok, error } = require('../../utils/response');
-const departamentosModel = require('./departamentos.model');
+import { ok, error } from '../../utils/response.js';
+import * as departamentosModel from './departamentos.model.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el listado de departamentos.
  */
-async function listar(req, res, next) {
+export async function listar(req, res, next) {
   try {
     const departamentos = await departamentosModel.obtenerTodos();
     return ok(res, departamentos, 'Departamentos obtenidos correctamente');
@@ -53,7 +53,7 @@ async function listar(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el departamento encontrado.
  */
-async function obtenerUno(req, res, next) {
+export async function obtenerUno(req, res, next) {
   try {
     const id = Number(req.params.id);
     const departamento = await departamentosModel.obtenerPorId(id);
@@ -73,7 +73,7 @@ async function obtenerUno(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el departamento creado.
  */
-async function crear(req, res, next) {
+export async function crear(req, res, next) {
   try {
     const { nombre, descripcion, encargado } = req.body;
 
@@ -92,7 +92,7 @@ async function crear(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando la actualizacion.
  */
-async function actualizar(req, res, next) {
+export async function actualizar(req, res, next) {
   try {
     const id = Number(req.params.id);
     const { nombre, descripcion, encargado } = req.body;
@@ -117,7 +117,7 @@ async function actualizar(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando la eliminacion.
  */
-async function eliminar(req, res, next) {
+export async function eliminar(req, res, next) {
   try {
     const id = Number(req.params.id);
 
@@ -140,5 +140,3 @@ async function eliminar(req, res, next) {
     next(err);
   }
 }
-
-module.exports = { listar, obtenerUno, crear, actualizar, eliminar };

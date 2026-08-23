@@ -21,9 +21,9 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const bcrypt = require('bcryptjs');
-const { ok, error } = require('../../utils/response');
-const usuariosModel = require('./usuarios.model');
+import bcrypt from 'bcryptjs';
+import { ok, error } from '../../utils/response.js';
+import * as usuariosModel from './usuarios.model.js';
 
 const SALT_ROUNDS = 10;
 
@@ -40,7 +40,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con los datos del perfil.
  */
-async function verPerfil(req, res, next) {
+export async function verPerfil(req, res, next) {
   try {
     const perfil = await usuariosModel.obtenerPerfilPorId(req.usuario.id);
 
@@ -61,7 +61,7 @@ async function verPerfil(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando la actualizacion.
  */
-async function actualizarPerfil(req, res, next) {
+export async function actualizarPerfil(req, res, next) {
   try {
     const { nombre_completo, fecha_nacimiento, departamento_id } = req.body;
 
@@ -83,8 +83,6 @@ async function actualizarPerfil(req, res, next) {
   }
 }
 
-module.exports = { verPerfil, actualizarPerfil, cambiarPassword };
-
 /**
  * Cambia la contrasena del usuario autenticado.
  * Requiere la contrasena actual (se valida contra el hash guardado
@@ -94,7 +92,7 @@ module.exports = { verPerfil, actualizarPerfil, cambiarPassword };
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando el cambio.
  */
-async function cambiarPassword(req, res, next) {
+export async function cambiarPassword(req, res, next) {
   try {
     const { password_actual, password_nueva, confirmar_password_nueva } = req.body;
 

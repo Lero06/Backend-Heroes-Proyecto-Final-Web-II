@@ -22,10 +22,10 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { ok, error } = require('../../utils/response');
-const reportesModel = require('./reportes.model');
-const { create }    = require('xmlbuilder2');
-const PDFDocument   = require('pdfkit');
+import { ok, error } from '../../utils/response.js';
+import * as reportesModel from './reportes.model.js';
+import { create } from 'xmlbuilder2';
+import PDFDocument from 'pdfkit';
 
 /*
 //////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el listado del reporte.
  */
-async function listarReporte(req, res, next) {
+export async function listarReporte(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -84,7 +84,7 @@ async function listarReporte(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarJSON(req, res, next) {
+export async function exportarJSON(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -105,7 +105,7 @@ async function exportarJSON(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarXML(req, res, next) {
+export async function exportarXML(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -147,7 +147,7 @@ async function exportarXML(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarPDF(req, res, next) {
+export async function exportarPDF(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -266,5 +266,3 @@ async function exportarPDF(req, res, next) {
     }
   }
 }
-
-module.exports = { listarReporte, exportarJSON, exportarXML, exportarPDF };

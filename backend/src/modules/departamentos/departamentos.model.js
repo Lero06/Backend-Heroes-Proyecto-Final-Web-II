@@ -19,7 +19,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@ FUNCIONES DE ACCESO A DATOS
  * Obtiene todos los departamentos registrados.
  * @returns {Promise<Array<object>>} Lista de departamentos.
  */
-async function obtenerTodos() {
+export async function obtenerTodos() {
   const [rows] = await pool.query(
     'SELECT id, nombre, descripcion, encargado, creado_en FROM departamentos ORDER BY nombre ASC'
   );
@@ -43,7 +43,7 @@ async function obtenerTodos() {
  * @param {number} id - Id del departamento.
  * @returns {Promise<object|null>} El departamento encontrado o null.
  */
-async function obtenerPorId(id) {
+export async function obtenerPorId(id) {
   const [rows] = await pool.query(
     'SELECT id, nombre, descripcion, encargado, creado_en FROM departamentos WHERE id = ?',
     [id]
@@ -59,7 +59,7 @@ async function obtenerPorId(id) {
  * @param {string} [datos.encargado] - Encargado opcional.
  * @returns {Promise<number>} Id del departamento creado.
  */
-async function crear({ nombre, descripcion, encargado }) {
+export async function crear({ nombre, descripcion, encargado }) {
   const [result] = await pool.query(
     'INSERT INTO departamentos (nombre, descripcion, encargado) VALUES (?, ?, ?)',
     [nombre, descripcion || null, encargado || null]
@@ -76,7 +76,7 @@ async function crear({ nombre, descripcion, encargado }) {
  * @param {string} [datos.encargado] - Encargado opcional.
  * @returns {Promise<boolean>} true si se modifico algun registro.
  */
-async function actualizar(id, { nombre, descripcion, encargado }) {
+export async function actualizar(id, { nombre, descripcion, encargado }) {
   const [result] = await pool.query(
     'UPDATE departamentos SET nombre = ?, descripcion = ?, encargado = ? WHERE id = ?',
     [nombre, descripcion || null, encargado || null, id]
@@ -89,7 +89,7 @@ async function actualizar(id, { nombre, descripcion, encargado }) {
  * @param {number} id - Id del departamento a eliminar.
  * @returns {Promise<boolean>} true si se elimino algun registro.
  */
-async function eliminar(id) {
+export async function eliminar(id) {
   const [result] = await pool.query('DELETE FROM departamentos WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
@@ -100,19 +100,10 @@ async function eliminar(id) {
  * @param {number} id - Id del departamento.
  * @returns {Promise<number>} Cantidad de usuarios asociados.
  */
-async function contarUsuariosAsociados(id) {
+export async function contarUsuariosAsociados(id) {
   const [rows] = await pool.query(
     'SELECT COUNT(*) AS total FROM usuarios WHERE departamento_id = ?',
     [id]
   );
   return rows[0].total;
 }
-
-module.exports = {
-  obtenerTodos,
-  obtenerPorId,
-  crear,
-  actualizar,
-  eliminar,
-  contarUsuariosAsociados,
-};

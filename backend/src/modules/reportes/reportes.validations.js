@@ -35,12 +35,10 @@ const esNumericoOpcional = (v) => v === undefined || (v !== '' && !isNaN(Number(
  * Esquema de validacion para los filtros opcionales del reporte de marcas.
  * Cada llave corresponde a un query param; la funcion devuelve true si es valido.
  */
-const esquemaFiltrosReporte = {
+export const esquemaFiltrosReporte = {
   usuario:     esNumericoOpcional,
   departamento: esNumericoOpcional,
   anio:        esNumericoOpcional,
   mes:         esNumericoOpcional,
   dia:         esNumericoOpcional,
 };
-
-module.exports = { esquemaFiltrosReporte };

@@ -23,7 +23,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ FUNCIONES DE ACCESO A DATOS
  * @param {number} [filtros.departamentoId] - Filtra por id de departamento del usuario.
  * @returns {Promise<Array<object>>} Lista de filas agrupadas con los campos del reporte.
  */
-async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, departamentoId } = {}) {
+export async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, departamentoId } = {}) {
   // Clausulas WHERE dinamicas y valores parametrizados
   const condiciones = [];
   const valores = [];
@@ -114,5 +114,3 @@ async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, departamentoI
   const [rows] = await pool.query(sql, valores);
   return rows;
 }
-
-module.exports = { obtenerMarcasFiltradas };

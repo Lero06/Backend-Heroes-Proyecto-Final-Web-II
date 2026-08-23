@@ -28,6 +28,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 import manejadorErrores from './middlewares/error.middleware.js';
+
+import authRoutes from './modules/auth/auth.routes.js';
+import departamentosRoutes from './modules/departamentos/departamentos.routes.js';
+import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
+import reportesRoutes from './modules/reportes/reportes.routes.js';
 import marcasRoutes from './modules/marcas/marcas.routes.js';
 import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js';
 

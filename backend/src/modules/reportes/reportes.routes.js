@@ -25,20 +25,20 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const express = require('express');
-const router  = express.Router();
+import express from 'express';
+const router = express.Router();
 
-const { error }       = require('../../utils/response');
-const verificarSesion = require('../../middlewares/auth.middleware');
-const verificarRol    = require('../../middlewares/roles.middleware');
-const validar         = require('../../middlewares/validate.middleware');
-const { esquemaFiltrosReporte } = require('./reportes.validations');
-const {
+import { error } from '../../utils/response.js';
+import verificarSesion from '../../middlewares/auth.middleware.js';
+import verificarRol from '../../middlewares/roles.middleware.js';
+import validar from '../../middlewares/validate.middleware.js';
+import { esquemaFiltrosReporte } from './reportes.validations.js';
+import {
   listarReporte,
   exportarJSON,
   exportarXML,
   exportarPDF,
-} = require('./reportes.controller');
+} from './reportes.controller.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -90,4 +90,4 @@ router.get('/exportar/xml', validarQuery(esquemaFiltrosReporte), exportarXML);
 // GET /api/reportes/exportar/pdf  -> descarga el reporte como archivo PDF
 router.get('/exportar/pdf', validarQuery(esquemaFiltrosReporte), exportarPDF);
 
-module.exports = router;
+export default router;

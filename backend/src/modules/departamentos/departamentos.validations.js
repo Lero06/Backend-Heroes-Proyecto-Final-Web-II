@@ -23,10 +23,8 @@ ESQUEMAS DE VALIDACION
 /**
  * Esquema de validacion para crear/actualizar un departamento.
  */
-const esquemaDepartamento = {
+export const esquemaDepartamento = {
   nombre: (v) => typeof v === 'string' && v.trim().length >= 3,
   descripcion: (v) => v === undefined || v === null || typeof v === 'string',
   encargado: (v) => v === undefined || v === null || typeof v === 'string',
 };
-
-module.exports = { esquemaDepartamento };

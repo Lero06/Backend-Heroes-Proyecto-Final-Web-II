@@ -20,11 +20,11 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const { ok, error } = require('../../utils/response');
-const { crearSesion, destruirSesion, SESSION_COOKIE } = require('../../utils/session');
-const authModel = require('./auth.model');
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { ok, error } from '../../utils/response.js';
+import { crearSesion, destruirSesion, SESSION_COOKIE } from '../../utils/session.js';
+import * as authModel from './auth.model.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el usuario creado (sin la contrasena).
  */
-async function registrar(req, res, next) {
+export async function registrar(req, res, next) {
   try {
     const {
       nombre_completo,
@@ -111,7 +111,7 @@ async function registrar(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con los datos basicos del usuario autenticado.
  */
-async function login(req, res, next) {
+export async function login(req, res, next) {
   try {
     const { identificador, password } = req.body; // usuario o correo
 
@@ -152,7 +152,7 @@ async function login(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando el cierre de sesion.
  */
-async function logout(req, res, next) {
+export async function logout(req, res, next) {
   try {
     const sid = req.cookies?.[SESSION_COOKIE];
 
@@ -168,8 +168,6 @@ async function logout(req, res, next) {
   }
 }
 
-module.exports = { registrar, login, logout, recuperarPassword, restablecerPassword };
-
 /**
  * Solicita la recuperacion de contrasena. Genera un token temporal de
  * un solo uso y lo guarda en tokens_recuperacion. Por seguridad,
@@ -180,7 +178,7 @@ module.exports = { registrar, login, logout, recuperarPassword, restablecerPassw
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP generica de confirmacion.
  */
-async function recuperarPassword(req, res, next) {
+export async function recuperarPassword(req, res, next) {
   try {
     const { identificador } = req.body;
 
@@ -221,7 +219,7 @@ async function recuperarPassword(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando el restablecimiento.
  */
-async function restablecerPassword(req, res, next) {
+export async function restablecerPassword(req, res, next) {
   try {
     const { token, password_nueva, confirmar_password_nueva } = req.body;
 

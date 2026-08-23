@@ -19,13 +19,13 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const validar = require('../../middlewares/validate.middleware');
-const verificarSesion = require('../../middlewares/auth.middleware');
-const { esquemaActualizarPerfil, esquemaCambiarPassword } = require('./usuarios.validations');
-const { verPerfil, actualizarPerfil, cambiarPassword } = require('./usuarios.controller');
+import validar from '../../middlewares/validate.middleware.js';
+import verificarSesion from '../../middlewares/auth.middleware.js';
+import { esquemaActualizarPerfil, esquemaCambiarPassword } from './usuarios.validations.js';
+import { verPerfil, actualizarPerfil, cambiarPassword } from './usuarios.controller.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -37,4 +37,4 @@ router.get('/perfil', verificarSesion, verPerfil);
 router.put('/perfil', verificarSesion, validar(esquemaActualizarPerfil), actualizarPerfil);
 router.put('/cambiar-password', verificarSesion, validar(esquemaCambiarPassword), cambiarPassword);
 
-module.exports = router;
+export default router;

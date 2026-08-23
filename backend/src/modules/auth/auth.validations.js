@@ -61,4 +61,4 @@ const esquemaRestablecerPassword = {
   confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,
 };
 
-module.exports = { esquemaRegistro, esquemaLogin, esquemaRecuperarPassword, esquemaRestablecerPassword };
+export { esquemaRegistro, esquemaLogin, esquemaRecuperarPassword, esquemaRestablecerPassword };

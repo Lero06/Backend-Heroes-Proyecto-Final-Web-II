@@ -28,7 +28,7 @@ FUNCIONES PRINCIPALES
  * @param {number} [status=200] - Codigo HTTP de la respuesta.
  * @returns {object} Respuesta HTTP enviada.
  */
-function ok(res, data = null, message = 'OK', status = 200) {
+export function ok(res, data = null, message = 'OK', status = 200) {
   return res.status(status).json({ ok: true, data, message });
 }
 
@@ -41,8 +41,6 @@ function ok(res, data = null, message = 'OK', status = 200) {
  * @param {any} [data=null] - Datos adicionales del error (opcional).
  * @returns {object} Respuesta HTTP enviada.
  */
-function error(res, message = 'Error', status = 400, data = null) {
+export function error(res, message = 'Error', status = 400, data = null) {
   return res.status(status).json({ ok: false, data, message });
 }
-
-module.exports = { ok, error };

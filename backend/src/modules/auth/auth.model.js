@@ -20,7 +20,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -171,7 +171,7 @@ async function crearUsuario({
   return result.insertId;
 }
 
-module.exports = {
+export default {
   buscarPorCorreo,
   buscarPorUsuario,
   buscarParaLogin,

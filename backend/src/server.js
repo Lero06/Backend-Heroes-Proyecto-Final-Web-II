@@ -19,8 +19,8 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const app = require('./app');
-const pool = require('./config/db');
+import app from './app.js';
+import pool from './config/db.js';
 
 /*
 //////////////////////////////////////////////////////////

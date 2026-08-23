@@ -19,7 +19,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ async function contarUsuariosAsociados(id) {
   return rows[0].total;
 }
 
-module.exports = {
+export default {
   obtenerTodos,
   obtenerPorId,
   crear,

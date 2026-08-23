@@ -19,12 +19,23 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-require('dotenv').config();
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
+import 'dotenv/config';
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const manejadorErrores = require('./middlewares/error.middleware');
+import manejadorErrores from './middlewares/error.middleware.js';
+
+import authRoutes from './modules/auth/auth.routes.js';
+import departamentosRoutes from './modules/departamentos/departamentos.routes.js';
+import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
+import reportesRoutes from './modules/reportes/reportes.routes.js';
+import equiposRoutes from './modules/equipos/equipos.routes.js';
+// import marcasRoutes from './modules/marcas/marcas.routes.js';
+// import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
+// import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -34,9 +45,16 @@ CONFIGURACION DE LA APP
 
 const app = express();
 
+// __dirname no existe de forma nativa en ESM; se reconstruye asi.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(cors({ origin: true, credentials: true })); // credentials: true porque usamos cookies de sesion
 app.use(express.json());
 app.use(cookieParser());
+
+// Sirve las imagenes subidas (ej. fotos de equipos) como archivos estaticos
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 /*
 //////////////////////////////////////////////////////////
@@ -45,14 +63,14 @@ RUTAS DE CADA MODULO
 */
 
 // Cada integrante monta su modulo aqui cuando lo tenga listo:
-app.use('/api/auth', require('./modules/auth/auth.routes'));
-app.use('/api/departamentos', require('./modules/departamentos/departamentos.routes'));
-app.use('/api/usuarios', require('./modules/usuarios/usuarios.routes'));
-app.use('/api/reportes', require('./modules/reportes/reportes.routes')); 
-// app.use('/api/marcas', require('./modules/marcas/marcas.routes'));
-// app.use('/api/equipos', require('./modules/equipos/equipos.routes'));
-// app.use('/api/prestamos', require('./modules/prestamos/prestamos.routes'));
-// app.use('/api/configuracion', require('./modules/configuracion/configuracion.routes'));
+app.use('/api/auth', authRoutes);
+app.use('/api/departamentos', departamentosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/reportes', reportesRoutes);
+app.use('/api/equipos', equiposRoutes);
+// app.use('/api/marcas', marcasRoutes);
+// app.use('/api/prestamos', prestamosRoutes);
+// app.use('/api/configuracion', configuracionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, data: null, message: 'API activa' });
@@ -66,4 +84,4 @@ MANEJO DE ERRORES (SIEMPRE AL FINAL)
 
 app.use(manejadorErrores);
 
-module.exports = app;
+export default app;

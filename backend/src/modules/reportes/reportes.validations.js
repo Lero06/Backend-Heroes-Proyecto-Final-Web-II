@@ -43,4 +43,4 @@ const esquemaFiltrosReporte = {
   dia:         esNumericoOpcional,
 };
 
-module.exports = { esquemaFiltrosReporte };
+export { esquemaFiltrosReporte };

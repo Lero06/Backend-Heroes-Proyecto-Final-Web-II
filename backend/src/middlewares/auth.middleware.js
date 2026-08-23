@@ -20,8 +20,8 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { obtenerSesion, SESSION_COOKIE } = require('../utils/session');
-const { error } = require('../utils/response');
+import { obtenerSesion, SESSION_COOKIE } from '../utils/session.js';
+import { error } from '../utils/response.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -60,4 +60,4 @@ async function verificarSesion(req, res, next) {
   }
 }
 
-module.exports = verificarSesion;
+export default verificarSesion;

@@ -19,7 +19,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ async function actualizarPassword(id, passwordHash) {
   return result.affectedRows > 0;
 }
 
-module.exports = {
+export default {
   obtenerPerfilPorId,
   actualizarPerfil,
   obtenerPasswordHashPorId,

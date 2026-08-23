@@ -29,4 +29,4 @@ const esquemaDepartamento = {
   encargado: (v) => v === undefined || v === null || typeof v === 'string',
 };
 
-module.exports = { esquemaDepartamento };
+export { esquemaDepartamento };

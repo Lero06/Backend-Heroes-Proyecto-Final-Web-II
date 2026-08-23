@@ -12,7 +12,7 @@ propio esquema (objeto con nombre_campo -> funcion validadora) y usa
 este wrapper para no repetir el patron de validacion en cada
 controlador.
 Ejemplo de uso dentro de un modulo:
-  const validar = require('../../middlewares/validate.middleware');
+  import validar from '../../middlewares/validate.middleware.js';
   const esquemaLogin = {
     usuario: (v) => typeof v === 'string' && v.trim().length > 0,
     password: (v) => typeof v === 'string' && v.length >= 6,
@@ -27,7 +27,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { error } = require('../utils/response');
+import { error } from '../utils/response.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -59,4 +59,4 @@ function validar(esquema) {
   };
 }
 
-module.exports = validar;
+export default validar;

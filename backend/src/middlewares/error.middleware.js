@@ -20,7 +20,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { error } = require('../utils/response');
+import { error } from '../utils/response.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -46,4 +46,4 @@ function manejadorErrores(err, req, res, next) {
   return error(res, mensaje, status);
 }
 
-module.exports = manejadorErrores;
+export default manejadorErrores;

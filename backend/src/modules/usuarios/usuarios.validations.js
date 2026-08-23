@@ -38,4 +38,4 @@ const esquemaCambiarPassword = {
   confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,
 };
 
-module.exports = { esquemaActualizarPerfil, esquemaCambiarPassword };
+export { esquemaActualizarPerfil, esquemaCambiarPassword };

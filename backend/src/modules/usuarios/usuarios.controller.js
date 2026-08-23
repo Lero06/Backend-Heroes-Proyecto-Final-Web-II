@@ -21,9 +21,9 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const bcrypt = require('bcryptjs');
-const { ok, error } = require('../../utils/response');
-const usuariosModel = require('./usuarios.model');
+import bcrypt from 'bcryptjs';
+import { ok, error } from '../../utils/response.js';
+import usuariosModel from './usuarios.model.js';
 
 const SALT_ROUNDS = 10;
 
@@ -83,7 +83,7 @@ async function actualizarPerfil(req, res, next) {
   }
 }
 
-module.exports = { verPerfil, actualizarPerfil, cambiarPassword };
+export { verPerfil, actualizarPerfil, cambiarPassword };
 
 /**
  * Cambia la contrasena del usuario autenticado.

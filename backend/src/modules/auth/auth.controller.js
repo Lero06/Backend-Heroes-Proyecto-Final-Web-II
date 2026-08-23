@@ -20,11 +20,11 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const { ok, error } = require('../../utils/response');
-const { crearSesion, destruirSesion, SESSION_COOKIE } = require('../../utils/session');
-const authModel = require('./auth.model');
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { ok, error } from '../../utils/response.js';
+import { crearSesion, destruirSesion, SESSION_COOKIE } from '../../utils/session.js';
+import authModel from './auth.model.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -168,7 +168,7 @@ async function logout(req, res, next) {
   }
 }
 
-module.exports = { registrar, login, logout, recuperarPassword, restablecerPassword };
+export { registrar, login, logout, recuperarPassword, restablecerPassword };
 
 /**
  * Solicita la recuperacion de contrasena. Genera un token temporal de

@@ -20,14 +20,14 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const validar = require('../../middlewares/validate.middleware');
-const verificarSesion = require('../../middlewares/auth.middleware');
-const verificarRol = require('../../middlewares/roles.middleware');
-const { esquemaDepartamento } = require('./departamentos.validations');
-const { listar, obtenerUno, crear, actualizar, eliminar } = require('./departamentos.controller');
+import validar from '../../middlewares/validate.middleware.js';
+import verificarSesion from '../../middlewares/auth.middleware.js';
+import verificarRol from '../../middlewares/roles.middleware.js';
+import { esquemaDepartamento } from './departamentos.validations.js';
+import { listar, obtenerUno, crear, actualizar, eliminar } from './departamentos.controller.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -44,4 +44,4 @@ router.post('/', verificarSesion, verificarRol('administrador'), validar(esquema
 router.put('/:id', verificarSesion, verificarRol('administrador'), validar(esquemaDepartamento), actualizar);
 router.delete('/:id', verificarSesion, verificarRol('administrador'), eliminar);
 
-module.exports = router;
+export default router;

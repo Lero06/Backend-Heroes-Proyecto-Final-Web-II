@@ -23,7 +23,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const pool = require('../../config/db');
+import pool from '../../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -115,4 +115,4 @@ async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, departamentoI
   return rows;
 }
 
-module.exports = { obtenerMarcasFiltradas };
+export { obtenerMarcasFiltradas };

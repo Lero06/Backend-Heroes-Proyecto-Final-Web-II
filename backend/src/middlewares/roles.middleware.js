@@ -19,7 +19,7 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { error } = require('../utils/response');
+import { error } from '../utils/response.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -44,4 +44,4 @@ function verificarRol(...rolesPermitidos) {
   };
 }
 
-module.exports = verificarRol;
+export default verificarRol;

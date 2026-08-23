@@ -22,10 +22,10 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { ok, error } = require('../../utils/response');
-const reportesModel = require('./reportes.model');
-const { create }    = require('xmlbuilder2');
-const PDFDocument   = require('pdfkit');
+import { ok, error } from '../../utils/response.js';
+import * as reportesModel from './reportes.model.js';
+import { create } from 'xmlbuilder2';
+import PDFDocument from 'pdfkit';
 
 /*
 //////////////////////////////////////////////////////////
@@ -267,4 +267,4 @@ async function exportarPDF(req, res, next) {
   }
 }
 
-module.exports = { listarReporte, exportarJSON, exportarXML, exportarPDF };
+export { listarReporte, exportarJSON, exportarXML, exportarPDF };

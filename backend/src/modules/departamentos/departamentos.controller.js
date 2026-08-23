@@ -21,8 +21,8 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { ok, error } = require('../../utils/response');
-const departamentosModel = require('./departamentos.model');
+import { ok, error } from '../../utils/response.js';
+import departamentosModel from './departamentos.model.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -141,4 +141,4 @@ async function eliminar(req, res, next) {
   }
 }
 
-module.exports = { listar, obtenerUno, crear, actualizar, eliminar };
+export { listar, obtenerUno, crear, actualizar, eliminar };

@@ -3,7 +3,8 @@ export default function Select({
     options = [],
     value,
     onChange,
-    texto = "Selecciona una opción"
+    texto = "Selecciona una opción",
+    placeholderSeleccionable = true
 }) {
     return (
         <div>
@@ -13,7 +14,9 @@ export default function Select({
                 value={value}
                 onChange={onChange}
             >
-                <option value="">{texto}</option>
+                <option value="" disabled={!placeholderSeleccionable} hidden={!placeholderSeleccionable}>
+                    {texto}
+                </option>
 
                 {options.map((option, index) => (
                     <option key={index} value={option.value}>

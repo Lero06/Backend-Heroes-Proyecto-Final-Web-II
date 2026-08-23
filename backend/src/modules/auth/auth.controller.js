@@ -52,7 +52,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el usuario creado (sin la contrasena).
  */
-async function registrar(req, res, next) {
+export async function registrar(req, res, next) {
   try {
     const {
       nombre_completo,
@@ -111,7 +111,7 @@ async function registrar(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con los datos basicos del usuario autenticado.
  */
-async function login(req, res, next) {
+export async function login(req, res, next) {
   try {
     const { identificador, password } = req.body; // usuario o correo
 
@@ -152,7 +152,7 @@ async function login(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando el cierre de sesion.
  */
-async function logout(req, res, next) {
+export async function logout(req, res, next) {
   try {
     const sid = req.cookies?.[SESSION_COOKIE];
 
@@ -180,7 +180,7 @@ export { registrar, login, logout, recuperarPassword, restablecerPassword };
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP generica de confirmacion.
  */
-async function recuperarPassword(req, res, next) {
+export async function recuperarPassword(req, res, next) {
   try {
     const { identificador } = req.body;
 
@@ -221,7 +221,7 @@ async function recuperarPassword(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP confirmando el restablecimiento.
  */
-async function restablecerPassword(req, res, next) {
+export async function restablecerPassword(req, res, next) {
   try {
     const { token, password_nueva, confirmar_password_nueva } = req.body;
 

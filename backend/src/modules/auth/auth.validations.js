@@ -26,7 +26,7 @@ ESQUEMAS DE VALIDACION
  * Esquema de validacion para el registro de un nuevo usuario.
  * Cada funcion recibe el valor del campo y retorna true/false.
  */
-const esquemaRegistro = {
+export const esquemaRegistro = {
   nombre_completo: (v) => typeof v === 'string' && v.trim().length >= 3,
   fecha_nacimiento: (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v),
   correo: (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
@@ -40,7 +40,7 @@ const esquemaRegistro = {
  * Esquema de validacion para el inicio de sesion.
  * `identificador` acepta usuario o correo, segun pide la guia del proyecto.
  */
-const esquemaLogin = {
+export const esquemaLogin = {
   identificador: (v) => typeof v === 'string' && v.trim().length > 0,
   password: (v) => typeof v === 'string' && v.length > 0,
 };
@@ -48,14 +48,14 @@ const esquemaLogin = {
 /**
  * Esquema de validacion para solicitar la recuperacion de contrasena.
  */
-const esquemaRecuperarPassword = {
+export const esquemaRecuperarPassword = {
   identificador: (v) => typeof v === 'string' && v.trim().length > 0,
 };
 
 /**
  * Esquema de validacion para restablecer la contrasena con un token.
  */
-const esquemaRestablecerPassword = {
+export const esquemaRestablecerPassword = {
   token: (v) => typeof v === 'string' && v.trim().length > 0,
   password_nueva: (v) => typeof v === 'string' && v.length >= 8,
   confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,

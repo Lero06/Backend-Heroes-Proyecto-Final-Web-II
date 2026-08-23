@@ -23,7 +23,7 @@ ESQUEMAS DE VALIDACION
 /**
  * Esquema de validacion para actualizar el perfil propio.
  */
-const esquemaActualizarPerfil = {
+export const esquemaActualizarPerfil = {
   nombre_completo: (v) => typeof v === 'string' && v.trim().length >= 3,
   fecha_nacimiento: (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v),
   departamento_id: (v) => v !== undefined && v !== null && Number.isInteger(Number(v)),
@@ -32,7 +32,7 @@ const esquemaActualizarPerfil = {
 /**
  * Esquema de validacion para cambiar la contrasena propia.
  */
-const esquemaCambiarPassword = {
+export const esquemaCambiarPassword = {
   password_actual: (v) => typeof v === 'string' && v.length > 0,
   password_nueva: (v) => typeof v === 'string' && v.length >= 8,
   confirmar_password_nueva: (v) => typeof v === 'string' && v.length >= 8,

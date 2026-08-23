@@ -3,14 +3,15 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: session.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Autenticacion / Sesiones
 Descripcion:
 Manejo de sesiones respaldado en la tabla `sesiones` de MySQL (no usa
 memoria del servidor, por lo que sobrevive a reinicios y funciona
 igual con varios procesos). Cualquier modulo del proyecto puede usar
 estas funciones para crear, consultar o destruir una sesion.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 

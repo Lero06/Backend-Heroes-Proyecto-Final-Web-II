@@ -3,13 +3,14 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: server.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
 Punto de entrada del backend. Verifica que la conexion a MySQL
 funcione antes de levantar el servidor HTTP, para fallar rapido si
 Docker o las credenciales de la base de datos no estan bien configuradas.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 

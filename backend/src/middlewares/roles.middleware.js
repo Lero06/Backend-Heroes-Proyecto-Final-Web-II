@@ -3,13 +3,14 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: roles.middleware.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Middlewares
 Descripcion:
 Middleware de control de permisos por rol. Debe usarse SIEMPRE despues
 de verificarSesion, ya que depende de req.usuario.
 Uso: router.delete('/equipos/:id', verificarSesion, verificarRol('administrador'), controlador);
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -32,7 +33,7 @@ FUNCION PRINCIPAL
  * @param {...string} rolesPermitidos - Nombres de rol autorizados (ej. 'administrador').
  * @returns {Function} Middleware de Express.
  */
-function verificarRol(...rolesPermitidos) {
+export function verificarRol(...rolesPermitidos) {
   return (req, res, next) => {
     if (!req.usuario) return error(res, 'No autenticado', 401);
 

@@ -65,7 +65,7 @@ FUNCIONES PRINCIPALES
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<object>} Respuesta HTTP con el listado del reporte.
  */
-async function listarReporte(req, res, next) {
+export async function listarReporte(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -84,7 +84,7 @@ async function listarReporte(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarJSON(req, res, next) {
+export async function exportarJSON(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -105,7 +105,7 @@ async function exportarJSON(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarXML(req, res, next) {
+export async function exportarXML(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
@@ -147,7 +147,7 @@ async function exportarXML(req, res, next) {
  * @param {Function} next - Siguiente middleware (manejo de errores).
  * @returns {Promise<void>}
  */
-async function exportarPDF(req, res, next) {
+export async function exportarPDF(req, res, next) {
   try {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);

@@ -32,8 +32,7 @@ const MODULOS = [
   { texto: 'Equipos', url: '/equipos', roles: null },
   { texto: 'Reportes', url: '/reportes', roles: ['administrador'] },
   { texto: 'Mi Perfil', url: '/perfil', roles: null },
-  // Cuando Marcas y Prestamos esten listos, agregar aqui:
-  // { texto: 'Marcas', url: '/marcas', roles: null },
+  { texto: 'Marcas', url: '/marcas', roles: null },
   // { texto: 'Prestamos', url: '/prestamos', roles: null },
 ];
 

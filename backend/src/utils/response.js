@@ -3,14 +3,15 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: response.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Utilidades
 Descripcion:
 Helper para estandarizar el formato de respuesta de toda la API:
 { ok: boolean, data: any, message: string }. Todos los controladores
 del proyecto deben usar ok()/error() en lugar de res.json() directo,
 para que el frontend siempre reciba la misma estructura.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 

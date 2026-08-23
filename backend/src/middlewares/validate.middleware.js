@@ -3,8 +3,8 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: validate.middleware.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Middlewares
 Descripcion:
 Middleware generico de validacion de body. Cada modulo define su
@@ -18,6 +18,7 @@ Ejemplo de uso dentro de un modulo:
     password: (v) => typeof v === 'string' && v.length >= 6,
   };
   router.post('/login', validar(esquemaLogin), controlador);
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -41,7 +42,7 @@ FUNCION PRINCIPAL
  * @param {Object<string, function(any): boolean>} esquema - Mapa campo -> funcion validadora.
  * @returns {Function} Middleware de Express.
  */
-function validar(esquema) {
+export function validar(esquema) {
   return (req, res, next) => {
     const errores = [];
 

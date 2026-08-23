@@ -31,7 +31,6 @@ import Button from '../components/Buttons.jsx';
 import Alert from '../components/Alert.jsx';
 import Input from '../components/Input.jsx';
 import Tabla from '../components/Tabla.jsx';
-import Titulo from '../components/Titulo.jsx';
 
 export default function Marcas() {
   const { usuario, logout } = useAuth();
@@ -298,26 +297,29 @@ export default function Marcas() {
                         'Tiempo Laborado',
                       ]}
                     >
-                      {historialMarcas.map((m) => (
-                        <tr key={m.id}>
-                          <td className="text-center font-monospace">{String(m.fecha).slice(0, 10)}</td>
-                          <td className="text-center font-monospace fw-bold">{m.hora}</td>
-                          <td className="text-center">
-                            <span
-                              className={`badge ${
-                                m.tipo === 'ENTRADA' ? 'bg-success' : 'bg-primary'
-                              } px-3 py-1`}
-                            >
-                              {m.tipo}
-                            </span>
-                          </td>
-                          <td className="text-center">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
-                          <td className="text-center font-monospace small">{m.ip}</td>
-                          <td className="text-center fw-semibold text-success">
-                            {m.duracion_calculada ? `⏱️ ${m.duracion_calculada}` : '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {historialMarcas.map((m) => {
+                        const duracion = m.duracion_calculada || m.duracion_laborada;
+                        return (
+                          <tr key={m.id}>
+                            <td className="text-center font-monospace">{String(m.fecha).slice(0, 10)}</td>
+                            <td className="text-center font-monospace fw-bold">{m.hora}</td>
+                            <td className="text-center">
+                              <span
+                                className={`badge ${
+                                  m.tipo === 'ENTRADA' ? 'bg-success' : 'bg-primary'
+                                } px-3 py-1`}
+                              >
+                                {m.tipo}
+                              </span>
+                            </td>
+                            <td className="text-center">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
+                            <td className="text-center font-monospace small">{m.ip}</td>
+                            <td className="text-center fw-semibold text-success">
+                              {duracion ? `⏱️ ${duracion}` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </Tabla>
                   )
                 }

@@ -72,8 +72,8 @@ function obtenerHoraActualTexto(date = new Date()) {
 function calcularDuracionTexto(horaEntrada, horaSalida) {
   if (!horaEntrada || !horaSalida) return null;
 
-  const [h1, m1, s1] = horaEntrada.split(':').map(Number);
-  const [h2, m2, s2] = horaSalida.split(':').map(Number);
+  const [h1, m1, s1] = String(horaEntrada).split(':').map(Number);
+  const [h2, m2, s2] = String(horaSalida).split(':').map(Number);
 
   const seg1 = h1 * 3600 + m1 * 60 + (s1 || 0);
   const seg2 = h2 * 3600 + m2 * 60 + (s2 || 0);
@@ -84,6 +84,7 @@ function calcularDuracionTexto(horaEntrada, horaSalida) {
   const horas = Math.floor(diferencia / 3600);
   const minutos = Math.floor((diferencia % 3600) / 60);
 
+  if (horas === 0 && minutos === 0) return 'menos de 1 minuto';
   if (horas === 0) return `${minutos} minutos`;
   if (minutos === 0) return `${horas} horas`;
   return `${horas} horas ${minutos} minutos`;
@@ -185,6 +186,7 @@ export async function marcar(req, res, next) {
       res,
       {
         ...marcaRegistrada,
+        duracion_calculada: duracionCalculada,
         duracion_laborada: duracionCalculada,
       },
       mensaje,
@@ -238,10 +240,16 @@ export async function listarMisMarcas(req, res, next) {
     const marcasConDuracion = [];
     for (let i = 0; i < marcas.length; i++) {
       const marca = { ...marcas[i] };
+      const fechaStr = String(marca.fecha).slice(0, 10);
+
       if (marca.tipo === 'SALIDA' && i < marcas.length - 1) {
         const siguiente = marcas[i + 1];
-        if (siguiente.tipo === 'ENTRADA' && siguiente.fecha === marca.fecha) {
-          marca.duracion_calculada = calcularDuracionTexto(siguiente.hora, marca.hora);
+        const fechaSigStr = String(siguiente.fecha).slice(0, 10);
+
+        if (siguiente.tipo === 'ENTRADA' && fechaSigStr === fechaStr) {
+          const dur = calcularDuracionTexto(siguiente.hora, marca.hora);
+          marca.duracion_calculada = dur;
+          marca.duracion_laborada = dur;
         }
       }
       marcasConDuracion.push(marca);

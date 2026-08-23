@@ -49,15 +49,12 @@ RUTAS DE CADA MODULO
 //////////////////////////////////////////////////////////
 */
 
-// Rutas del Modulo 2: Marcas y Dispositivos (Marco Vásquez)
+app.use('/api/auth', authRoutes);
+app.use('/api/departamentos', departamentosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/reportes', reportesRoutes);
 app.use('/api/dispositivos', dispositivosRoutes);
 app.use('/api/marcas', marcasRoutes);
-
-// Rutas de otros integrantes (se descomentan conforme las agreguen):
-// app.use('/api/auth', authRoutes);
-// app.use('/api/departamentos', departamentosRoutes);
-// app.use('/api/usuarios', usuariosRoutes);
-// app.use('/api/reportes', reportesRoutes);
 // app.use('/api/equipos', equiposRoutes);
 // app.use('/api/prestamos', prestamosRoutes);
 // app.use('/api/configuracion', configuracionRoutes);

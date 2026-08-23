@@ -3,14 +3,15 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: session.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Autenticacion / Sesiones
 Descripcion:
 Manejo de sesiones respaldado en la tabla `sesiones` de MySQL (no usa
 memoria del servidor, por lo que sobrevive a reinicios y funciona
 igual con varios procesos). Cualquier modulo del proyecto puede usar
 estas funciones para crear, consultar o destruir una sesion.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -20,8 +21,8 @@ IMPORTS
 //////////////////////////////////////////////////////////
 */
 
-const { v4: uuidv4 } = require('uuid');
-const pool = require('../config/db');
+import { v4 as uuidv4 } from 'uuid';
+import pool from '../config/db.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -29,8 +30,8 @@ CONSTANTES
 //////////////////////////////////////////////////////////
 */
 
-const SESSION_COOKIE = 'sid';
-const DEFAULT_MAX_AGE_MIN = Number(process.env.SESSION_MAX_AGE_MIN || 120);
+export const SESSION_COOKIE = 'sid';
+export const DEFAULT_MAX_AGE_MIN = Number(process.env.SESSION_MAX_AGE_MIN || 120);
 
 /*
 //////////////////////////////////////////////////////////
@@ -45,7 +46,7 @@ FUNCIONES PRINCIPALES
  * @param {object} req - Objeto request de Express (se usa para IP y user-agent).
  * @returns {Promise<{id: string, expiraEn: Date}>} Id de la sesion creada y su fecha de expiracion.
  */
-async function crearSesion(usuarioId, req) {
+export async function crearSesion(usuarioId, req) {
   const id = uuidv4();
   const expiraEn = new Date(Date.now() + DEFAULT_MAX_AGE_MIN * 60 * 1000);
 
@@ -63,7 +64,7 @@ async function crearSesion(usuarioId, req) {
  * @param {string} id - Id de la sesion (valor de la cookie `sid`).
  * @returns {Promise<object|null>} Datos de la sesion junto con el usuario y su rol, o null si no es valida.
  */
-async function obtenerSesion(id) {
+export async function obtenerSesion(id) {
   const [rows] = await pool.query(
     `SELECT s.id, s.usuario_id, s.expira_en,
             u.usuario, u.correo, u.rol_id, r.nombre AS rol
@@ -90,14 +91,6 @@ async function obtenerSesion(id) {
  * @param {string} id - Id de la sesion a destruir.
  * @returns {Promise<void>}
  */
-async function destruirSesion(id) {
+export async function destruirSesion(id) {
   await pool.query('DELETE FROM sesiones WHERE id = ?', [id]);
 }
-
-module.exports = {
-  crearSesion,
-  obtenerSesion,
-  destruirSesion,
-  SESSION_COOKIE,
-  DEFAULT_MAX_AGE_MIN,
-};

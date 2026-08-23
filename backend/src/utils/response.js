@@ -3,14 +3,15 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: response.js
-Autor: Leandro Sanchez Rojas
-Fecha: 12/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
+Fecha: 22/08/2026
 Modulo: Utilidades
 Descripcion:
 Helper para estandarizar el formato de respuesta de toda la API:
 { ok: boolean, data: any, message: string }. Todos los controladores
 del proyecto deben usar ok()/error() en lugar de res.json() directo,
 para que el frontend siempre reciba la misma estructura.
+Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
 
@@ -28,7 +29,7 @@ FUNCIONES PRINCIPALES
  * @param {number} [status=200] - Codigo HTTP de la respuesta.
  * @returns {object} Respuesta HTTP enviada.
  */
-function ok(res, data = null, message = 'OK', status = 200) {
+export function ok(res, data = null, message = 'OK', status = 200) {
   return res.status(status).json({ ok: true, data, message });
 }
 
@@ -41,8 +42,6 @@ function ok(res, data = null, message = 'OK', status = 200) {
  * @param {any} [data=null] - Datos adicionales del error (opcional).
  * @returns {object} Respuesta HTTP enviada.
  */
-function error(res, message = 'Error', status = 400, data = null) {
+export function error(res, message = 'Error', status = 400, data = null) {
   return res.status(status).json({ ok: false, data, message });
 }
-
-module.exports = { ok, error };

@@ -10,45 +10,31 @@ Descripcion:
 Pagina de reportes de marcas (exclusiva de administradores). Permite
 filtrar las marcas por usuario, anio, mes, dia y departamento, visualizar
 los resultados en una tabla Bootstrap y exportar el reporte en tres
-formatos: JSON, XML y PDF. Si el usuario no tiene rol de administrador,
-se muestra un mensaje de acceso denegado en vez del contenido.
-//////////////////////////////////////////////////////////
-*/
-
-/*
-//////////////////////////////////////////////////////////
-IMPORTS
+formatos: JSON, XML y PDF.
 //////////////////////////////////////////////////////////
 */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../api/client';
+import { useAuth } from '../context/AuthContext.jsx';
+import { apiFetch } from '../api/client.js';
 import {
   obtenerReporte,
   exportarReporteJSON,
   exportarReporteXML,
   exportarReportePDF,
-} from '../api/reportes';
-import Alert   from '../components/Alert';
-import Select  from '../components/Select';
-import Button  from '../components/Buttons';
-import Titulo  from '../components/Titulo';
-import Card    from '../components/Card';
-import Input   from '../components/Input';
-import Tabla   from '../components/Tabla';
-import Navbar  from '../components/Navbar';
-
-/*
-//////////////////////////////////////////////////////////
-COMPONENTE PRINCIPAL
-//////////////////////////////////////////////////////////
-*/
+} from '../api/reportes.js';
+import Alert   from '../components/Alert.jsx';
+import Select  from '../components/Select.jsx';
+import Button  from '../components/Buttons.jsx';
+import Titulo  from '../components/Titulo.jsx';
+import Card    from '../components/Card.jsx';
+import Input   from '../components/Input.jsx';
+import Tabla   from '../components/Tabla.jsx';
+import Navbar  from '../components/Navbar.jsx';
 
 export default function Reportes() {
   const { usuario, logout } = useAuth();
 
-  // ---- Estado de filtros ----
   const [filtros, setFiltros] = useState({
     usuario: '',
     anio: '',
@@ -57,32 +43,23 @@ export default function Reportes() {
     departamento: '',
   });
 
-  // ---- Estado de datos ----
   const [filas, setFilas] = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [mensajeBusqueda, setMensajeBusqueda] = useState('');
   const [error, setError] = useState('');
-  const [buscado, setBuscado] = useState(false); // si ya se hizo al menos una busqueda
+  const [buscado, setBuscado] = useState(false);
 
-  // ---- Carga inicial: lista de departamentos ----
   useEffect(() => {
     apiFetch('/departamentos').then((respuesta) => {
       if (respuesta.ok) setDepartamentos(respuesta.data);
     });
   }, []);
 
-  /**
-   * Actualiza el valor de un filtro en el estado.
-   * @param {React.ChangeEvent<HTMLInputElement|HTMLSelectElement>} e
-   */
   const manejarCambioFiltro = (e) => {
     setFiltros({ ...filtros, [e.target.name]: e.target.value });
   };
 
-  /**
-   * Limpia todos los filtros y los resultados de la tabla.
-   */
   const limpiarFiltros = () => {
     setFiltros({ usuario: '', anio: '', mes: '', dia: '', departamento: '' });
     setFilas([]);
@@ -91,10 +68,6 @@ export default function Reportes() {
     setError('');
   };
 
-  /**
-   * Ejecuta la busqueda con los filtros actuales y actualiza la tabla.
-   * @param {React.FormEvent} e - Evento del formulario.
-   */
   const buscar = useCallback(async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     setError('');
@@ -120,19 +93,11 @@ export default function Reportes() {
     );
   }, [filtros]);
 
-  // ---- Funciones de exportacion (usan los filtros actuales) ----
-
-  /** Descarga el reporte como archivo JSON. */
   const descargarJSON = () => exportarReporteJSON(filtros);
-
-  /** Descarga el reporte como archivo XML. */
   const descargarXML = () => exportarReporteXML(filtros);
-
-  /** Descarga el reporte como archivo PDF. */
   const descargarPDF = () => exportarReportePDF(filtros);
 
-  // ---- Guard de rol ----
-  if (!usuario) return null; // RutaProtegida maneja el estado de carga
+  if (!usuario) return null;
 
   if (usuario.rol !== 'administrador') {
     return (
@@ -146,7 +111,6 @@ export default function Reportes() {
     );
   }
 
-  // ---- Renderizado ----
   return (
     <>
       <Navbar
@@ -154,6 +118,7 @@ export default function Reportes() {
         texto="SIGMA"
         navList={true}
         links={[
+          { texto: 'Marcas & Dispositivos', url: '/marcas', active: false },
           { texto: 'Reportes', url: '/reportes', active: true },
           { texto: 'Mi Perfil', url: '/perfil', active: false }
         ]}
@@ -170,7 +135,6 @@ export default function Reportes() {
       <div className="container-fluid px-4">
         <Titulo tipografia="h2" texto="Reporte de Marcas" color_text="negro" alineado="centro" />
 
-        {/* ======== Formulario de filtros ======== */}
         <div className="mb-4">
         <Card
           responsivo={true}
@@ -181,8 +145,6 @@ export default function Reportes() {
           chil_body={
             <form id="form-filtros-reporte" onSubmit={buscar}>
               <div className="row g-3">
-
-                {/* Usuario (id numerico) */}
                 <div className="col-12 col-md">
                   <Input
                     label="ID Usuario"
@@ -195,7 +157,6 @@ export default function Reportes() {
                   />
                 </div>
 
-                {/* Departamento */}
                 <div className="col-12 col-md">
                   <Select
                     label="Departamento"
@@ -206,7 +167,6 @@ export default function Reportes() {
                   />
                 </div>
 
-                {/* Año */}
                 <div className="col-12 col-md">
                   <Input
                     label="Año"
@@ -220,7 +180,6 @@ export default function Reportes() {
                   />
                 </div>
 
-                {/* Mes */}
                 <div className="col-12 col-md">
                   <Select
                     label="Mes"
@@ -244,7 +203,6 @@ export default function Reportes() {
                   />
                 </div>
 
-                {/* Día */}
                 <div className="col-12 col-md">
                   <Input
                     label="Día"
@@ -258,7 +216,6 @@ export default function Reportes() {
                   />
                 </div>
 
-                {/* Botones */}
                 <div className="col-12 d-flex gap-2 align-items-end flex-wrap">
                   <Button
                     id="btn-buscar-reporte"
@@ -282,7 +239,6 @@ export default function Reportes() {
         />
       </div>
 
-      {/* ======== Mensajes de estado ======== */}
       {error && (
         <Alert color="rojo" fondoBlanco={true} texto={error} dismissible onDismiss={() => setError('')} />
       )}
@@ -293,7 +249,6 @@ export default function Reportes() {
         <Alert color="verde" fondoBlanco={true} texto={mensajeBusqueda} />
       )}
 
-      {/* ======== Tabla de resultados ======== */}
       {filas.length > 0 && (
         <>
           <Card
@@ -331,7 +286,6 @@ export default function Reportes() {
             }
           />
 
-          {/* ======== Botones de exportacion (distribuidos equitativamente en toda la fila) ======== */}
           <div className="row g-3 mt-1 mb-4">
             <div className="col-md-4">
               <Button

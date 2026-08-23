@@ -14,21 +14,10 @@ la ruta esta protegida por RutaProtegida (ver App.jsx).
 //////////////////////////////////////////////////////////
 */
 
-/*
-//////////////////////////////////////////////////////////
-IMPORTS
-//////////////////////////////////////////////////////////
-*/
-
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../api/client';
-import { useAuth } from '../context/AuthContext';
-
-/*
-//////////////////////////////////////////////////////////
-COMPONENTE PRINCIPAL
-//////////////////////////////////////////////////////////
-*/
+import { apiFetch } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import Navbar from '../components/Navbar.jsx';
 
 export default function Perfil() {
   const { usuario, verificarSesion, logout } = useAuth();
@@ -44,11 +33,10 @@ export default function Perfil() {
   });
   const [mensajePassword, setMensajePassword] = useState('');
 
-  // Precarga el formulario con los datos actuales del perfil
   useEffect(() => {
     if (usuario) {
       setForm({
-        nombre_completo: usuario.nombre_completo,
+        nombre_completo: usuario.nombre_completo || '',
         fecha_nacimiento: usuario.fecha_nacimiento?.slice(0, 10) || '',
         departamento_id: usuario.departamento_id || '',
       });
@@ -69,7 +57,7 @@ export default function Perfil() {
       body: { ...form, departamento_id: Number(form.departamento_id) },
     });
     setMensajePerfil(respuesta.message);
-    if (respuesta.ok) verificarSesion(); // refresca el contexto con los datos nuevos
+    if (respuesta.ok) verificarSesion();
   };
 
   const manejarCambioPassword = (e) => {
@@ -88,118 +76,133 @@ export default function Perfil() {
     }
   };
 
-  if (!usuario) return null; // RutaProtegida ya maneja el estado de carga
+  if (!usuario) return null;
 
   return (
-    <div className="container" style={{ maxWidth: '520px', marginTop: '3rem' }}>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">Mi perfil</h1>
-        <button className="btn btn-outline-secondary btn-sm" onClick={logout}>
-          Cerrar sesion
-        </button>
+    <>
+      <Navbar
+        color="azul"
+        texto="SIGMA"
+        navList={true}
+        links={[
+          { texto: 'Marcas & Dispositivos', url: '/marcas', active: false },
+          { texto: 'Reportes', url: '/reportes', active: false },
+          { texto: 'Mi Perfil', url: '/perfil', active: true }
+        ]}
+        buttonContent={
+          <button className="btn btn-danger btn-sm" onClick={logout}>
+            Cerrar sesion
+          </button>
+        }
+      />
+
+      <div className="container" style={{ maxWidth: '520px', marginTop: '1rem' }}>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="h3 mb-0">Mi perfil</h1>
+        </div>
+
+        <p className="text-muted">
+          Usuario: <strong>{usuario.usuario}</strong> &middot; Correo: <strong>{usuario.correo}</strong> &middot;
+          Rol: <strong>{usuario.rol}</strong>
+        </p>
+
+        <form onSubmit={guardarPerfil} className="mb-5">
+          <h2 className="h5">Datos personales</h2>
+
+          <div className="mb-3">
+            <label className="form-label">Nombre completo</label>
+            <input
+              type="text"
+              name="nombre_completo"
+              className="form-control"
+              value={form.nombre_completo}
+              onChange={manejarCambioPerfil}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Fecha de nacimiento</label>
+            <input
+              type="date"
+              name="fecha_nacimiento"
+              className="form-control"
+              value={form.fecha_nacimiento}
+              onChange={manejarCambioPerfil}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Departamento / carrera</label>
+            <select
+              name="departamento_id"
+              className="form-select"
+              value={form.departamento_id}
+              onChange={manejarCambioPerfil}
+              required
+            >
+              {departamentos.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {mensajePerfil && <div className="alert alert-info py-2">{mensajePerfil}</div>}
+
+          <button type="submit" className="btn btn-primary">
+            Guardar cambios
+          </button>
+        </form>
+
+        <form onSubmit={cambiarPassword}>
+          <h2 className="h5">Cambiar contraseña</h2>
+
+          <div className="mb-3">
+            <label className="form-label">Contraseña actual</label>
+            <input
+              type="password"
+              name="password_actual"
+              className="form-control"
+              value={passwordForm.password_actual}
+              onChange={manejarCambioPassword}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Nueva contraseña</label>
+            <input
+              type="password"
+              name="password_nueva"
+              className="form-control"
+              value={passwordForm.password_nueva}
+              onChange={manejarCambioPassword}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Confirmar nueva contraseña</label>
+            <input
+              type="password"
+              name="confirmar_password_nueva"
+              className="form-control"
+              value={passwordForm.confirmar_password_nueva}
+              onChange={manejarCambioPassword}
+              required
+            />
+          </div>
+
+          {mensajePassword && <div className="alert alert-info py-2">{mensajePassword}</div>}
+
+          <button type="submit" className="btn btn-primary mb-4">
+            Cambiar contraseña
+          </button>
+        </form>
       </div>
-
-      <p className="text-muted">
-        Usuario: <strong>{usuario.usuario}</strong> &middot; Correo: <strong>{usuario.correo}</strong> &middot;
-        Rol: <strong>{usuario.rol}</strong>
-      </p>
-
-      <form onSubmit={guardarPerfil} className="mb-5">
-        <h2 className="h5">Datos personales</h2>
-
-        <div className="mb-3">
-          <label className="form-label">Nombre completo</label>
-          <input
-            type="text"
-            name="nombre_completo"
-            className="form-control"
-            value={form.nombre_completo}
-            onChange={manejarCambioPerfil}
-            required
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Fecha de nacimiento</label>
-          <input
-            type="date"
-            name="fecha_nacimiento"
-            className="form-control"
-            value={form.fecha_nacimiento}
-            onChange={manejarCambioPerfil}
-            required
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Departamento / carrera</label>
-          <select
-            name="departamento_id"
-            className="form-select"
-            value={form.departamento_id}
-            onChange={manejarCambioPerfil}
-            required
-          >
-            {departamentos.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {mensajePerfil && <div className="alert alert-info py-2">{mensajePerfil}</div>}
-
-        <button type="submit" className="btn btn-primary">
-          Guardar cambios
-        </button>
-      </form>
-
-      <form onSubmit={cambiarPassword}>
-        <h2 className="h5">Cambiar contraseña</h2>
-
-        <div className="mb-3">
-          <label className="form-label">Contraseña actual</label>
-          <input
-            type="password"
-            name="password_actual"
-            className="form-control"
-            value={passwordForm.password_actual}
-            onChange={manejarCambioPassword}
-            required
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Nueva contraseña</label>
-          <input
-            type="password"
-            name="password_nueva"
-            className="form-control"
-            value={passwordForm.password_nueva}
-            onChange={manejarCambioPassword}
-            required
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Confirmar nueva contraseña</label>
-          <input
-            type="password"
-            name="confirmar_password_nueva"
-            className="form-control"
-            value={passwordForm.confirmar_password_nueva}
-            onChange={manejarCambioPassword}
-            required
-          />
-        </div>
-
-        {mensajePassword && <div className="alert alert-info py-2">{mensajePassword}</div>}
-
-        <button type="submit" className="btn btn-primary">
-          Cambiar contraseña
-        </button>
-      </form>
-    </div>
+    </>
   );
 }

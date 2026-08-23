@@ -199,6 +199,15 @@ async function actualizar(req, res, next) {
       );
     }
 
+    if (equipoActual.estado === 'PRESTADO' && estado !== 'PRESTADO') {
+      borrarImagenSiExiste(req.file?.filename);
+      return error(
+        res,
+        'El equipo esta actualmente prestado; el estado solo puede cambiarse mediante el modulo de prestamos (al registrar la devolucion)',
+        409
+      );
+    }
+
     // Si el nuevo codigo pertenece a otro equipo, es un duplicado
     const equipoConEseCodigo = await equiposModel.obtenerPorCodigo(codigoNormalizado);
     if (equipoConEseCodigo && equipoConEseCodigo.id !== Number(id)) {

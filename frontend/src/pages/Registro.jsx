@@ -20,7 +20,8 @@ IMPORTS
 */
 
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../api/client';
 
 /*
@@ -46,6 +47,7 @@ COMPONENTE PRINCIPAL
 */
 
 export default function Registro() {
+  const { usuario } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState(FORM_INICIAL);
@@ -53,6 +55,10 @@ export default function Registro() {
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  if (usuario) {
+    return <Navigate to="/" replace />;
+  }
 
   // Carga el selector de departamentos al montar la pagina
   useEffect(() => {

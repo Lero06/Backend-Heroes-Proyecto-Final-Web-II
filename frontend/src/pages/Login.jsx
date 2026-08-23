@@ -20,7 +20,7 @@ IMPORTS
 */
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 /*
@@ -30,12 +30,16 @@ COMPONENTE PRINCIPAL
 */
 
 export default function Login() {
-  const { login } = useAuth();
+  const { usuario, login } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ identificador: '', password: '' });
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  if (usuario) {
+    return <Navigate to="/" replace />;
+  }
 
   /**
    * Actualiza un campo del formulario en base a su name.
@@ -61,7 +65,7 @@ export default function Login() {
       return;
     }
 
-    navigate('/reportes');
+    navigate('/');
   };
 
   return (

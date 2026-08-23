@@ -23,7 +23,8 @@ IMPORTS
 */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../api/client';
 
 /*
@@ -33,10 +34,15 @@ COMPONENTE PRINCIPAL
 */
 
 export default function RecuperarPassword() {
+  const { usuario } = useAuth();
   const [identificador, setIdentificador] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [enlace, setEnlace] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  if (usuario) {
+    return <Navigate to="/" replace />;
+  }
 
   const manejarSubmit = async (e) => {
     e.preventDefault();

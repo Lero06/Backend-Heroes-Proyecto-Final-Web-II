@@ -17,7 +17,9 @@ la ruta esta protegida por RutaProtegida (ver App.jsx).
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { obtenerLinksNav } from '../utils/navLinks';
 import Navbar from '../components/Navbar.jsx';
+import Button from '../components/Buttons.jsx';
 
 export default function Perfil() {
   const { usuario, verificarSesion, logout } = useAuth();
@@ -84,15 +86,14 @@ export default function Perfil() {
         color="azul"
         texto="SIGMA"
         navList={true}
-        links={[
-          { texto: 'Marcas & Dispositivos', url: '/marcas', active: false },
-          { texto: 'Reportes', url: '/reportes', active: false },
-          { texto: 'Mi Perfil', url: '/perfil', active: true }
-        ]}
+        links={obtenerLinksNav(usuario, '/perfil')}
         buttonContent={
-          <button className="btn btn-danger btn-sm" onClick={logout}>
-            Cerrar sesion
-          </button>
+          <Button
+            color="rojo"
+            tamano="pequeño"
+            onClick={logout}
+            texto="Cerrar sesion"
+          />
         }
       />
 

@@ -17,6 +17,7 @@ duracion laborada calculada.
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { obtenerLinksNav } from '../utils/navLinks';
 import { marcarAsistencia, obtenerEstadoActual, obtenerMisMarcas } from '../api/marcas.js';
 import {
   registrarDispositivo,
@@ -155,15 +156,16 @@ export default function Marcas() {
       {/* Navbar Superior */}
       <Navbar
         color="azul"
-        texto="SIGMA - Marcas & Dispositivos"
+        texto="SIGMA"
         navList={true}
-        links={[
-          { texto: 'Marcas & Dispositivos', url: '/marcas', active: true },
-          ...(usuario.rol === 'administrador' ? [{ texto: 'Reportes', url: '/reportes', active: false }] : []),
-          { texto: 'Mi Perfil', url: '/perfil', active: false },
-        ]}
+        links={obtenerLinksNav(usuario, '/marcas')}
         buttonContent={
-          <Button color="rojo" tamano="pequeño" onClick={logout} texto="Cerrar sesión" />
+          <Button
+            color="rojo"
+            tamano="pequeño"
+            onClick={logout}
+            texto="Cerrar sesion"
+          />
         }
       />
 

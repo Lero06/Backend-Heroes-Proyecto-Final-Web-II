@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function Navbar( { 
     
     clases = "lg", 
@@ -45,10 +47,10 @@ export default function Navbar( {
         <nav className={navClasses} style={navStyles}> 
             <div className="container-fluid px-4">
                 
-                {texto && <a className="navbar-brand fw-semibold text-white" href="#">
+                {texto && <Link className="navbar-brand fw-semibold text-white" to="/">
                     {brandContent}
                     {texto}
-                </a>}
+                </Link>}
 
                 {reponsive_navbar && <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
@@ -59,9 +61,9 @@ export default function Navbar( {
                     {links && <ul className={`navbar-nav ${navListClass}`}>
                         {links.map((link, index ) => (
                             <li className="nav-item" key={index}>
-                                <a className={`nav-link ${link.active ? 'active fw-semibold' : ''}`} href={link.url}>
+                                <Link className={`nav-link ${link.active ? 'active fw-semibold' : ''}`} to={link.url}>
                                     {link.texto}
-                                </a>
+                                </Link>
                             </li>
                         ))}
                     </ul>}

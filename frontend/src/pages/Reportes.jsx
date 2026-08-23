@@ -23,6 +23,7 @@ IMPORTS
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { obtenerLinksNav } from '../utils/navLinks';
 import { apiFetch } from '../api/client';
 import {
   obtenerReporte,
@@ -153,10 +154,7 @@ export default function Reportes() {
         color="azul"
         texto="SIGMA"
         navList={true}
-        links={[
-          { texto: 'Reportes', url: '/reportes', active: true },
-          { texto: 'Mi Perfil', url: '/perfil', active: false }
-        ]}
+        links={obtenerLinksNav(usuario, '/reportes')}
         buttonContent={
           <Button
             color="rojo"

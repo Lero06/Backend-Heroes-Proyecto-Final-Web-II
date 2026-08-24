@@ -7,53 +7,34 @@ Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
-Punto de entrada del backend. Verifica que la conexion a MySQL
-funcione antes de levantar el servidor HTTP, para fallar rapido si
-Docker o las credenciales de la base de datos no estan bien configuradas.
-Adaptado a ES Modules (import/export).
+Punto de entrada del backend. Inicia el servidor HTTP escuchando en el
+puerto dinamico asignado por Railway/Render (process.env.PORT) y en 0.0.0.0.
 //////////////////////////////////////////////////////////
 */
 
-/*
-//////////////////////////////////////////////////////////
-IMPORTS
-//////////////////////////////////////////////////////////
-*/
+// Capturar el puerto de Railway antes de cargar variables locales de .env
+const PORT_RAILWAY = process.env.PORT;
+
+import dotenv from 'dotenv';
+dotenv.config();
 
 import app from './app.js';
 import pool from './config/db.js';
 
-/*
-//////////////////////////////////////////////////////////
-CONSTANTES
-//////////////////////////////////////////////////////////
-*/
+// Si Railway proporciono un puerto, usarlo; de lo contrario usar 4000 para desarrollo local
+const PORT = Number(PORT_RAILWAY || process.env.PORT || 4000);
 
-const PORT = process.env.PORT || 4000;
-
-/*
-//////////////////////////////////////////////////////////
-FUNCION PRINCIPAL
-//////////////////////////////////////////////////////////
-*/
-
-/**
- * Inicializa el servidor: primero valida la conexion a la base de
- * datos y, si es exitosa, levanta el servidor Express.
- * @returns {Promise<void>}
- */
 async function iniciar() {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SERVER] Escuchando exitosamente en http://0.0.0.0:${PORT}`);
+  });
+
   try {
     await pool.query('SELECT 1');
-    console.log('Conexion a MySQL exitosa');
+    console.log('[MYSQL] Conexion a la base de datos exitosa');
   } catch (err) {
-    console.error('No se pudo conectar a MySQL:', err.message);
-    process.exit(1);
+    console.error('[MYSQL ERROR] No se pudo conectar a la base de datos:', err.message);
   }
-
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-  });
 }
 
 iniciar();

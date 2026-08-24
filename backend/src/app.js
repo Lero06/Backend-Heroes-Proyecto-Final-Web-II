@@ -8,8 +8,8 @@ Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
 Configuracion central de la aplicacion Express: middlewares globales,
-montaje de las rutas de cada modulo (incluidos Marcas y Dispositivos) y
-manejador de errores centralizado.
+montaje de las rutas de cada modulo (Auth, Departamentos, Usuarios,
+Reportes, Marcas, Dispositivos y Configuración) y manejador de errores centralizado.
 Adaptado a ES Modules (import/export).
 //////////////////////////////////////////////////////////
 */
@@ -39,7 +39,7 @@ import equiposRoutes from './modules/equipos/equipos.routes.js';
 import marcasRoutes from './modules/marcas/marcas.routes.js';
 import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js'
 import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
-// import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
+import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ app.use('/api/equipos', equiposRoutes);
 app.use('/api/dispositivos', dispositivosRoutes);
 app.use('/api/marcas', marcasRoutes);
 app.use('/api/prestamos', prestamosRoutes);
-// app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, data: null, message: 'API activa' });

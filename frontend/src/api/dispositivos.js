@@ -9,7 +9,8 @@ Modulo: Frontend - Dispositivos Autorizados
 Descripcion:
 Capa de acceso a la API del modulo de dispositivos autorizados.
 Expone funciones para registrar el dispositivo actual del navegador,
-listar mis dispositivos, actualizar su estado y eliminarlos.
+seleccionar un dispositivo en el navegador, listar dispositivos,
+actualizar su estado y eliminarlos.
 //////////////////////////////////////////////////////////
 */
 
@@ -24,6 +25,17 @@ export async function registrarDispositivo(datos) {
   return apiFetch('/dispositivos/registrar', {
     method: 'POST',
     body: datos,
+  });
+}
+
+/**
+ * Selecciona un dispositivo previamente registrado para vincularlo al navegador actual.
+ * @param {string} id - UUID del dispositivo.
+ * @returns {Promise<{ok: boolean, data: object, message: string}>}
+ */
+export async function seleccionarDispositivo(id) {
+  return apiFetch(`/dispositivos/${id}/seleccionar`, {
+    method: 'POST',
   });
 }
 

@@ -33,7 +33,7 @@ const MODULOS = [
   { texto: 'Reportes', url: '/reportes', roles: ['administrador'] },
   { texto: 'Mi Perfil', url: '/perfil', roles: null },
   { texto: 'Marcas', url: '/marcas', roles: null },
-  // { texto: 'Prestamos', url: '/prestamos', roles: null },
+  { texto: 'Prestamos', url: '/prestamos', roles: null },
 ];
 
 /*

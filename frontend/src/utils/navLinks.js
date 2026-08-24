@@ -30,10 +30,12 @@ CONFIGURACION DE MODULOS
 const MODULOS = [
   { texto: 'Inicio', url: '/', roles: null },
   { texto: 'Equipos', url: '/equipos', roles: null },
-  { texto: 'Reportes', url: '/reportes', roles: ['administrador'] },
-  { texto: 'Mi Perfil', url: '/perfil', roles: null },
+  { texto: 'Prestamos', url: '/prestamos', roles: ['administrador'] },
+  { texto: 'Departamentos', url: '/departamentos', roles: ['administrador'] },
   { texto: 'Marcas', url: '/marcas', roles: null },
-  { texto: 'Prestamos', url: '/prestamos', roles: null },
+  { texto: 'Reportes', url: '/reportes', roles: ['administrador'] },
+  { texto: 'Configuración', url: '/configuracion', roles: ['administrador'] },
+  { texto: 'Mi Perfil', url: '/perfil', roles: null }
 ];
 
 /*

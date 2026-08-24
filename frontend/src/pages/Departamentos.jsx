@@ -184,14 +184,6 @@ export default function Departamentos() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/departamentos')}
-        buttonContent={
-          <Button
-            color="rojo"
-            tamano="pequeño"
-            onClick={logout}
-            texto="Cerrar sesion"
-          />
-        }
       />
 
       <div className="container-fluid px-4 py-2">
@@ -202,7 +194,7 @@ export default function Departamentos() {
           </div>
           <Button
             color="verde"
-            texto="➕ Nuevo Departamento"
+            texto="+ Nuevo Departamento"
             onClick={abrirCrear}
           />
         </div>
@@ -281,7 +273,7 @@ export default function Departamentos() {
                 <form onSubmit={manejarGuardar}>
                   <div className="modal-header bg-primary text-white">
                     <h5 className="modal-title">
-                      {modalFormulario.esEdicion ? '✏️ Editar Departamento' : '➕ Registrar Nuevo Departamento'}
+                      {modalFormulario.esEdicion ? 'Editar Departamento' : '+ Registrar Nuevo Departamento'}
                     </h5>
                     <button
                       type="button"

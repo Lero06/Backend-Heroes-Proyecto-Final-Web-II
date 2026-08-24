@@ -148,14 +148,6 @@ export default function Configuracion() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/configuracion')}
-        buttonContent={
-          <Button
-            color="rojo"
-            tamano="pequeño"
-            onClick={logout}
-            texto="Cerrar sesion"
-          />
-        }
       />
 
       <div className="container-fluid px-4 py-2">
@@ -244,7 +236,7 @@ export default function Configuracion() {
                         type="submit"
                         color="azul"
                         cargando={guardando}
-                        texto="💾 Guardar Parámetros"
+                        texto="Guardar Parámetros"
                       />
                     </div>
                   </form>

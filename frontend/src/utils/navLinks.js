@@ -35,7 +35,7 @@ const MODULOS = [
   { texto: 'Marcas', url: '/marcas', roles: null },
   { texto: 'Reportes', url: '/reportes', roles: ['administrador'] },
   { texto: 'Configuración', url: '/configuracion', roles: ['administrador'] },
-  { texto: 'Mi Perfil', url: '/perfil', roles: null }
+  { texto: 'Perfil', url: '/perfil', roles: null }
 ];
 
 /*

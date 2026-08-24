@@ -87,19 +87,17 @@ export default function Perfil() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/perfil')}
-        buttonContent={
+      />
+
+      <div className="container mt-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="h3 mb-0">Perfil</h1>
           <Button
             color="rojo"
             tamano="pequeño"
             onClick={logout}
             texto="Cerrar sesion"
           />
-        }
-      />
-
-      <div className="container" style={{ maxWidth: '520px', marginTop: '1rem' }}>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h1 className="h3 mb-0">Mi perfil</h1>
         </div>
 
         <p className="text-muted">

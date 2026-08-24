@@ -69,8 +69,9 @@ export default function Login() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '420px', marginTop: '4rem' }}>
-      <h1 className="h3 mb-4 text-center">Iniciar sesion</h1>
+    <div className="container d-flex flex-column justify-content-center align-items-center vh-100">
+      <div style={{ maxWidth: '420px', width: '100%' }}>
+        <h1 className="h3 mb-4 text-center">Iniciar sesion</h1>
 
       <form onSubmit={manejarSubmit}>
         <div className="mb-3">
@@ -107,6 +108,7 @@ export default function Login() {
       <div className="d-flex justify-content-between mt-3">
         <Link to="/registro">Crear cuenta</Link>
         <Link to="/recuperar-password">Olvide mi contraseña</Link>
+      </div>
       </div>
     </div>
   );

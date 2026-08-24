@@ -176,7 +176,6 @@ export default function EquipoForm() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/equipos')}
-        buttonContent={<Button color="rojo" tamano="pequeño" onClick={logout} texto="Cerrar sesion" />}
       />
 
       <div className="container" style={{ maxWidth: '640px' }}>

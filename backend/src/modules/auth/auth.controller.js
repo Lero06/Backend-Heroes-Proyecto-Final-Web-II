@@ -24,6 +24,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { ok, error } from '../../utils/response.js';
 import { crearSesion, destruirSesion, SESSION_COOKIE } from '../../utils/session.js';
+import { enviarCorreoRecuperacion } from '../../utils/mailer.js';
 import authModel from './auth.model.js';
 
 /*
@@ -198,12 +199,14 @@ export async function recuperarPassword(req, res, next) {
 
     await authModel.crearTokenRecuperacion(usuario.id, token, expiraEn);
 
-    // NOTA: aqui se conectaria el envio real por correo (ej. Nodemailer).
-    // Mientras tanto, se devuelve el enlace en la respuesta para poder
-    // probar el flujo completo desde Postman/Thunder Client.
-    const enlace = `http://localhost:5173/restablecer-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const enlace = `${frontendUrl}/restablecer-password?token=${token}`;
 
-    return ok(res, { enlace }, mensajeGenerico);
+    // Enviar el correo real con Mailtrap/Nodemailer.
+    // Si falla el envio se lanza una excepcion que captura el middleware de errores.
+    await enviarCorreoRecuperacion(usuario.correo, usuario.usuario, enlace);
+
+    return ok(res, null, mensajeGenerico);
   } catch (err) {
     next(err);
   }

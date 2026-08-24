@@ -204,7 +204,6 @@ export default function Prestamos() {
         texto="SIGMA"
         navList
         links={obtenerLinksNav(usuario, '/prestamos')}
-        buttonContent={<Button color="rojo" tamano="pequeño" onClick={logout} texto="Cerrar sesión" />}
       />
 
       <div className="container-fluid px-4">

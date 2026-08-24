@@ -153,14 +153,6 @@ export default function Reportes() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/reportes')}
-        buttonContent={
-          <Button
-            color="rojo"
-            tamano="pequeño"
-            onClick={logout}
-            texto="Cerrar sesion"
-          />
-        }
       />
 
       <div className="container-fluid px-4">
@@ -326,7 +318,7 @@ export default function Reportes() {
                 cargando={descargando === 'xml'}
                 disabled={Boolean(descargando)}
                 onClick={descargarXML}
-                texto="⬇ Exportar XML"
+                texto="Exportar XML"
               />
             </div>
             <div className="col-md-4">
@@ -337,7 +329,7 @@ export default function Reportes() {
                 cargando={descargando === 'pdf'}
                 disabled={Boolean(descargando)}
                 onClick={descargarPDF}
-                texto="⬇ Exportar PDF"
+                texto="Exportar PDF"
               />
             </div>
             <div className="col-md-4">
@@ -348,7 +340,7 @@ export default function Reportes() {
                 cargando={descargando === 'json'}
                 disabled={Boolean(descargando)}
                 onClick={descargarJSON}
-                texto="⬇ Exportar JSON"
+                texto="Exportar JSON"
               />
             </div>
           </div>

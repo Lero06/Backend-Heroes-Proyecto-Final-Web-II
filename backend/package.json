@@ -16,6 +16,7 @@
     "express": "^4.22.2",
     "multer": "^2.2.0",
     "mysql2": "^3.23.3",
+    "nodemailer": "^9.0.5",
     "pdfkit": "^0.19.1",
     "uuid": "^9.0.1",
     "xmlbuilder2": "^4.0.3"

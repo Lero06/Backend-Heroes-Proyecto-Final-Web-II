@@ -10,9 +10,9 @@ Descripcion:
 Pantalla para solicitar la recuperacion de contrasena. Envia el
 usuario/correo a POST /api/auth/recuperar-password. El backend
 siempre responde el mismo mensaje generico, exista o no el usuario.
-Como todavia no hay envio de correo real configurado, el backend
-devuelve el enlace en la respuesta y esta pantalla lo muestra
-directamente para poder probar el flujo completo.
+Solicita la recuperacion de contrasena al backend. El backend envia
+un correo real con el enlace de restablecimiento mediante Mailtrap.
+Esta pantalla solo muestra el mensaje generico de confirmacion.
 //////////////////////////////////////////////////////////
 */
 
@@ -37,7 +37,6 @@ export default function RecuperarPassword() {
   const { usuario } = useAuth();
   const [identificador, setIdentificador] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const [enlace, setEnlace] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   if (usuario) {
@@ -47,7 +46,6 @@ export default function RecuperarPassword() {
   const manejarSubmit = async (e) => {
     e.preventDefault();
     setEnviando(true);
-    setEnlace('');
 
     const respuesta = await apiFetch('/auth/recuperar-password', {
       method: 'POST',
@@ -56,12 +54,6 @@ export default function RecuperarPassword() {
 
     setEnviando(false);
     setMensaje(respuesta.message);
-
-    // El backend todavia no envia correo real: mientras tanto, devuelve
-    // el enlace en la respuesta para poder probar el flujo completo.
-    if (respuesta.ok && respuesta.data?.enlace) {
-      setEnlace(respuesta.data.enlace);
-    }
   };
 
   return (
@@ -81,14 +73,6 @@ export default function RecuperarPassword() {
         </div>
 
         {mensaje && <div className="alert alert-info py-2">{mensaje}</div>}
-
-        {enlace && (
-          <div className="alert alert-warning py-2">
-            <strong>Modo de prueba</strong> (todavia no hay envio de correo real):
-            <br />
-            <Link to={enlace.replace('http://localhost:5173', '')}>{enlace}</Link>
-          </div>
-        )}
 
         <button type="submit" className="btn btn-primary w-100" disabled={enviando}>
           {enviando ? 'Enviando...' : 'Enviar enlace de recuperacion'}

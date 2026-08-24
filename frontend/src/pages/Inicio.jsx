@@ -195,9 +195,6 @@ export default function Inicio() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/')}
-        buttonContent={
-          <Button color="rojo" tamano="pequeño" onClick={logout} texto="Cerrar sesion" />
-        }
       />
 
       <div className="container-fluid px-4 py-2">
@@ -385,7 +382,7 @@ export default function Inicio() {
                     >
                       <i className="bi bi-person-circle fs-2 text-secondary"></i>
                       <div>
-                        <div className="fw-bold">Mi Perfil</div>
+                        <div className="fw-bold">Perfil</div>
                         <small className="text-muted">Datos y contraseña</small>
                       </div>
                     </button>

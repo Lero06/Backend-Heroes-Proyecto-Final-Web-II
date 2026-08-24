@@ -53,7 +53,15 @@ export async function actualizar(req, res, next) {
     if (!actualizado) return error(res, 'Configuración no encontrada o no modificada', 400);
 
     const configActualizada = await configuracionModel.obtenerPorClave(clave);
-    return ok(res, configActualizada, `Configuración "${clave}" actualizada correctamente`);
+    const MENSAJES = {
+      rango_ip_permitido: 'Rango de red IP actualizado correctamente.',
+      nombre_institucion: 'Nombre de institución actualizado correctamente.',
+      tiempo_max_sesion_min: 'Tiempo de sesión actualizado correctamente.',
+      tamano_max_archivo_mb: 'Tamaño máximo de archivos actualizado correctamente.',
+    };
+    const mensaje = MENSAJES[clave] || 'Configuración actualizada correctamente.';
+
+    return ok(res, configActualizada, mensaje);
   } catch (err) {
     next(err);
   }

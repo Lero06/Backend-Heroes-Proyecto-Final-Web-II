@@ -29,7 +29,7 @@ CONFIGURACION DE MODULOS
  */
 const MODULOS = [
   { texto: 'Inicio', url: '/', roles: null },
-  { texto: 'Equipos', url: '/equipos', roles: null },
+  { texto: 'Equipos', url: '/equipos', roles: ['administrador'] },
   { texto: 'Prestamos', url: '/prestamos', roles: ['administrador'] },
   { texto: 'Departamentos', url: '/departamentos', roles: ['administrador'] },
   { texto: 'Marcas', url: '/marcas', roles: null },

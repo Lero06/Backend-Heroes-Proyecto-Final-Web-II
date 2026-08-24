@@ -201,14 +201,54 @@ export default function Marcas() {
   const guardarRangoIp = async (e) => {
     e.preventDefault();
     setMensajeIpConfig(null);
-    setCargandoIpConfig(true);
 
-    const res = await actualizarRangoIp(rangoIp);
+    const valor = rangoIp.trim();
+
+    // Validar formato: IP simple, CIDR (x.x.x.x/n), comodín o múltiples separados por coma
+    const patronIp = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const patronCidr = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+    const esComodin = valor === '*' || valor === '0.0.0.0/0';
+
+    const fragmentos = valor.split(',').map((f) => f.trim()).filter(Boolean);
+
+    if (fragmentos.length === 0) {
+      setMensajeIpConfig({ tipo: 'rojo', texto: 'El campo de rango IP no puede estar vacío.' });
+      return;
+    }
+
+    const todosValidos = fragmentos.every((f) => {
+      if (f === '*' || f === '0.0.0.0/0' || f === '::1') return true;
+      if (patronIp.test(f)) {
+        // Verificar que cada octeto sea 0-255
+        return f.split('.').every((oct) => Number(oct) >= 0 && Number(oct) <= 255);
+      }
+      if (patronCidr.test(f)) {
+        const [ip, prefijo] = f.split('/');
+        const prefijoNum = Number(prefijo);
+        const octetos = ip.split('.');
+        return (
+          prefijoNum >= 0 && prefijoNum <= 32 &&
+          octetos.every((oct) => Number(oct) >= 0 && Number(oct) <= 255)
+        );
+      }
+      return false;
+    });
+
+    if (!todosValidos) {
+      setMensajeIpConfig({
+        tipo: 'rojo',
+        texto: 'Formato de IP inválido. Use una IP (192.168.1.1), un rango CIDR (192.168.1.0/24) o varias separadas por coma.',
+      });
+      return;
+    }
+
+    setCargandoIpConfig(true);
+    const res = await actualizarRangoIp(valor);
     setCargandoIpConfig(false);
 
     setMensajeIpConfig({
       tipo: res.ok ? 'verde' : 'rojo',
-      texto: res.message,
+      texto: res.ok ? 'Rango de red IP actualizado correctamente.' : (res.message || 'Error al guardar el rango de IP.'),
     });
 
     if (res.ok) {

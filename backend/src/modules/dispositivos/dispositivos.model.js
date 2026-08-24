@@ -63,11 +63,13 @@ export async function obtenerDispositivoPorId(id) {
 }
 
 /**
- * Obtiene todos los dispositivos registrados por un usuario especifico.
+ * Obtiene todos los dispositivos registrados por un usuario especifico,
+ * marcando el dispositivo que coincide con el navegador actual.
  * @param {number} usuarioId - Id del usuario.
+ * @param {string} [dispositivoActualId] - UUID del dispositivo de la cookie actual.
  * @returns {Promise<Array>} Lista de dispositivos del usuario.
  */
-export async function obtenerDispositivosPorUsuario(usuarioId) {
+export async function obtenerDispositivosPorUsuario(usuarioId, dispositivoActualId = null) {
   const [rows] = await pool.query(
     `SELECT id, nombre, descripcion, estado, fecha_registro
      FROM dispositivos
@@ -75,7 +77,11 @@ export async function obtenerDispositivosPorUsuario(usuarioId) {
      ORDER BY fecha_registro DESC`,
     [usuarioId]
   );
-  return rows;
+
+  return rows.map((d) => ({
+    ...d,
+    es_actual: d.id === dispositivoActualId,
+  }));
 }
 
 /**

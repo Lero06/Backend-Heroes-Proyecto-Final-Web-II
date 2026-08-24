@@ -45,10 +45,12 @@ export async function obtenerRangoIpPermitido() {
  */
 export async function obtenerUltimaMarcaPorUsuario(usuarioId) {
   const [rows] = await pool.query(
-    `SELECT id, usuario_id, dispositivo_id, fecha, hora, tipo, ip, creado_en
-     FROM marcas
-     WHERE usuario_id = ?
-     ORDER BY id DESC
+    `SELECT m.id, m.usuario_id, m.dispositivo_id, m.fecha, m.hora, m.tipo, m.ip, m.creado_en,
+            u.nombre_completo AS usuario_nombre
+     FROM marcas m
+     JOIN usuarios u ON u.id = m.usuario_id
+     WHERE m.usuario_id = ?
+     ORDER BY m.id DESC
      LIMIT 1`,
     [usuarioId]
   );
@@ -76,15 +78,17 @@ export async function registrarMarca({ usuario_id, dispositivo_id, fecha, hora, 
 }
 
 /**
- * Obtiene una marca por su ID con datos descriptivos del dispositivo.
+ * Obtiene una marca por su ID con datos descriptivos del dispositivo y nombre de usuario.
  * @param {number} id - Id de la marca.
  * @returns {Promise<object|null>} Marca encontrada o null.
  */
 export async function obtenerMarcaPorId(id) {
   const [rows] = await pool.query(
     `SELECT m.id, m.usuario_id, m.dispositivo_id, m.fecha, m.hora, m.tipo, m.ip, m.creado_en,
+            u.nombre_completo AS usuario_nombre,
             d.nombre AS dispositivo_nombre
      FROM marcas m
+     JOIN usuarios u ON u.id = m.usuario_id
      LEFT JOIN dispositivos d ON d.id = m.dispositivo_id
      WHERE m.id = ?`,
     [id]
@@ -93,15 +97,17 @@ export async function obtenerMarcaPorId(id) {
 }
 
 /**
- * Obtiene el historial completo de marcas de un usuario especifico.
+ * Obtiene el historial completo de marcas de un usuario especifico con nombre completo de usuario.
  * @param {number} usuarioId - Id del usuario.
  * @returns {Promise<Array>} Lista de marcas registradas.
  */
 export async function obtenerMarcasPorUsuario(usuarioId) {
   const [rows] = await pool.query(
     `SELECT m.id, m.usuario_id, m.dispositivo_id, m.fecha, m.hora, m.tipo, m.ip, m.creado_en,
+            u.nombre_completo AS usuario_nombre,
             d.nombre AS dispositivo_nombre
      FROM marcas m
+     JOIN usuarios u ON u.id = m.usuario_id
      LEFT JOIN dispositivos d ON d.id = m.dispositivo_id
      WHERE m.usuario_id = ?
      ORDER BY m.fecha DESC, m.hora DESC`,

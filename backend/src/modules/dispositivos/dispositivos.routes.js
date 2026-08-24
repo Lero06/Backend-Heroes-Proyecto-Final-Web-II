@@ -28,6 +28,7 @@ import {
 } from './dispositivos.validations.js';
 import {
   registrarDispositivo,
+  seleccionarDispositivo,
   listarMisDispositivos,
   cambiarEstadoDispositivo,
   eliminarDispositivo,
@@ -43,6 +44,9 @@ RUTAS
 
 // Registrar el dispositivo actual desde el que navega el usuario
 router.post('/registrar', verificarSesion, validar(esquemaRegistrarDispositivo), registrarDispositivo);
+
+// Seleccionar un dispositivo ya registrado para usar en este navegador
+router.post('/:id/seleccionar', verificarSesion, seleccionarDispositivo);
 
 // Consultar lista de mis dispositivos autorizados
 router.get('/mis-dispositivos', verificarSesion, listarMisDispositivos);

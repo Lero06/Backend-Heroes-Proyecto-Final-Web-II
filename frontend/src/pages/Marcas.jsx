@@ -11,20 +11,22 @@ Pantalla principal para el Modulo de Marcas y Dispositivos. Permite
 marcar entrada y salida con alternancia automatica, verificar el estado
 de asistencia en vivo, consultar la red IP, registrar el navegador como
 dispositivo autorizado, gestionar dispositivos y ver el historial con
-duracion laborada calculada.
+nombre de usuario y duracion laborada calculada.
 //////////////////////////////////////////////////////////
 */
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { obtenerLinksNav } from '../utils/navLinks';
+import { obtenerLinksNav } from '../utils/navLinks.js';
 import { marcarAsistencia, obtenerEstadoActual, obtenerMisMarcas } from '../api/marcas.js';
 import {
   registrarDispositivo,
+  seleccionarDispositivo,
   obtenerMisDispositivos,
   cambiarEstadoDispositivo,
   eliminarDispositivo,
 } from '../api/dispositivos.js';
+import { obtenerRangoIp, actualizarRangoIp } from '../api/configuracion.js';
 
 import Navbar from '../components/Navbar.jsx';
 import Card from '../components/Card.jsx';
@@ -36,7 +38,7 @@ import Tabla from '../components/Tabla.jsx';
 export default function Marcas() {
   const { usuario, logout } = useAuth();
 
-  // Pestaña activa ('asistencia' o 'dispositivos')
+  // Pestaña activa ('asistencia', 'dispositivos', 'configuracion')
   const [tabActiva, setTabActiva] = useState('asistencia');
 
   // Estado de Asistencia
@@ -51,6 +53,11 @@ export default function Marcas() {
   const [nuevoDispositivo, setNuevoDispositivo] = useState({ nombre: '', descripcion: '' });
   const [cargandoDispositivo, setCargandoDispositivo] = useState(false);
   const [mensajeDispositivo, setMensajeDispositivo] = useState(null);
+
+  // Estado de Configuración IP (Solo Admin)
+  const [rangoIp, setRangoIp] = useState('0.0.0.0/0');
+  const [cargandoIpConfig, setCargandoIpConfig] = useState(false);
+  const [mensajeIpConfig, setMensajeIpConfig] = useState(null);
 
   // Reloj en vivo
   useEffect(() => {
@@ -73,12 +80,23 @@ export default function Marcas() {
     if (resDisp.ok) setDispositivos(resDisp.data);
   }, []);
 
+  // Cargar configuración de IP (si es admin)
+  const cargarConfiguracionIp = useCallback(async () => {
+    const resIp = await obtenerRangoIp();
+    if (resIp.ok && resIp.data) {
+      setRangoIp(resIp.data.valor);
+    }
+  }, []);
+
   useEffect(() => {
     if (usuario) {
       cargarDatosMarcas();
       cargarDispositivos();
+      if (usuario.rol === 'administrador') {
+        cargarConfiguracionIp();
+      }
     }
-  }, [usuario, cargarDatosMarcas, cargarDispositivos]);
+  }, [usuario, cargarDatosMarcas, cargarDispositivos, cargarConfiguracionIp]);
 
   // Ejecutar Marca (ENTRADA / SALIDA)
   const ejecutarMarca = async () => {
@@ -124,6 +142,18 @@ export default function Marcas() {
     }
   };
 
+  // Seleccionar dispositivo para el navegador actual
+  const handleSeleccionarDispositivo = async (id) => {
+    const res = await seleccionarDispositivo(id);
+    if (res.ok) {
+      cargarDispositivos();
+      cargarDatosMarcas();
+      setMensajeDispositivo({ tipo: 'verde', texto: res.message });
+    } else {
+      setMensajeDispositivo({ tipo: 'rojo', texto: res.message });
+    }
+  };
+
   // Cambiar estado del dispositivo
   const toggleEstadoDispositivo = async (id, estadoActual) => {
     const nuevoEstado = estadoActual === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
@@ -144,6 +174,25 @@ export default function Marcas() {
     }
   };
 
+  // Actualizar rango de IP permitido (Administrador)
+  const guardarRangoIp = async (e) => {
+    e.preventDefault();
+    setMensajeIpConfig(null);
+    setCargandoIpConfig(true);
+
+    const res = await actualizarRangoIp(rangoIp);
+    setCargandoIpConfig(false);
+
+    setMensajeIpConfig({
+      tipo: res.ok ? 'verde' : 'rojo',
+      texto: res.message,
+    });
+
+    if (res.ok) {
+      cargarDatosMarcas();
+    }
+  };
+
   if (!usuario) return null;
 
   const esEntrada = estadoActual?.siguiente_marca_sugerida === 'ENTRADA';
@@ -153,7 +202,7 @@ export default function Marcas() {
 
   return (
     <>
-      {/* Navbar Superior */}
+      {/* Navbar Estandar de la App */}
       <Navbar
         color="azul"
         texto="SIGMA"
@@ -185,6 +234,14 @@ export default function Marcas() {
             >
               <i className="bi bi-laptop me-2"></i> Dispositivos Autorizados
             </button>
+            {usuario.rol === 'administrador' && (
+              <button
+                className={`btn btn-${tabActiva === 'configuracion' ? 'primary' : 'outline-primary'} px-4 py-2 fw-bold`}
+                onClick={() => setTabActiva('configuracion')}
+              >
+                <i className="bi bi-gear me-2"></i> Configuración IP
+              </button>
+            )}
           </div>
         </div>
 
@@ -210,7 +267,7 @@ export default function Marcas() {
                           estadoAsistencia === 'DENTRO' ? 'bg-success' : 'bg-secondary'
                         } fs-4 px-4 py-2 shadow-sm rounded-pill`}
                       >
-                        {estadoAsistencia === 'DENTRO' ? '🟢 DENTRO (En Jornada)' : '⚪ FUERA (Sin Marca Activa)'}
+                        {estadoAsistencia === 'DENTRO' ? 'DENTRO (En Jornada)' : 'FUERA (Sin Marca Activa)'}
                       </span>
                     </div>
 
@@ -218,18 +275,24 @@ export default function Marcas() {
                     <div className="row justify-content-center g-3 my-2 text-center">
                       <div className="col-auto">
                         <div className="p-2 border rounded bg-light">
-                          <small className="text-muted d-block">Hora Local System</small>
-                          <strong className="fs-5 text-dark">{horaEnVivo}</strong>
+                          <small className="text-muted d-block">Hora Local Sistema</small>
+                          <strong className="fs-5 text-dark">
+                            <i className="bi bi-clock me-1"></i> {horaEnVivo}
+                          </strong>
                         </div>
                       </div>
                       <div className="col-auto">
                         <div className="p-2 border rounded bg-light">
                           <small className="text-muted d-block">IP de Conexión</small>
-                          <strong className="fs-5 text-dark">{ipCliente}</strong>{' '}
+                          <strong className="fs-5 text-dark me-2">{ipCliente}</strong>
                           {ipAutorizada ? (
-                            <span className="badge bg-success">Red Autorizada ✓</span>
+                            <span className="badge bg-success">
+                              <i className="bi bi-check-circle me-1"></i> Red Autorizada
+                            </span>
                           ) : (
-                            <span className="badge bg-danger">Red No Permitida ✕</span>
+                            <span className="badge bg-danger">
+                              <i className="bi bi-x-circle me-1"></i> Red No Permitida
+                            </span>
                           )}
                         </div>
                       </div>
@@ -268,8 +331,10 @@ export default function Marcas() {
                         disabled={!ipAutorizada}
                         onClick={ejecutarMarca}
                         className="px-5 py-3 fs-4 fw-bold shadow"
-                        texto={esEntrada ? '📥 MARCAR ENTRADA' : '📤 MARCAR SALIDA'}
-                      />
+                      >
+                        <i className={`bi ${esEntrada ? 'bi-box-arrow-in-right' : 'bi-box-arrow-right'} me-2`}></i>
+                        {esEntrada ? 'MARCAR ENTRADA' : 'MARCAR SALIDA'}
+                      </Button>
                     </div>
                   </div>
                 }
@@ -291,6 +356,7 @@ export default function Marcas() {
                   ) : (
                     <Tabla
                       columnas={[
+                        'Usuario',
                         'Fecha',
                         'Hora',
                         'Tipo de Marca',
@@ -303,9 +369,10 @@ export default function Marcas() {
                         const duracion = m.duracion_calculada || m.duracion_laborada;
                         return (
                           <tr key={m.id}>
-                            <td className="text-center font-monospace">{String(m.fecha).slice(0, 10)}</td>
-                            <td className="text-center font-monospace fw-bold">{m.hora}</td>
-                            <td className="text-center">
+                            <td className="fw-bold align-middle">{m.usuario_nombre || usuario.nombre_completo}</td>
+                            <td className="text-center font-monospace align-middle">{String(m.fecha).slice(0, 10)}</td>
+                            <td className="text-center font-monospace fw-bold align-middle">{m.hora}</td>
+                            <td className="text-center align-middle">
                               <span
                                 className={`badge ${
                                   m.tipo === 'ENTRADA' ? 'bg-success' : 'bg-primary'
@@ -314,10 +381,17 @@ export default function Marcas() {
                                 {m.tipo}
                               </span>
                             </td>
-                            <td className="text-center">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
-                            <td className="text-center font-monospace small">{m.ip}</td>
-                            <td className="text-center fw-semibold text-success">
-                              {duracion ? `⏱️ ${duracion}` : '—'}
+                            <td className="text-center align-middle">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
+                            <td className="text-center font-monospace small align-middle">{m.ip}</td>
+                            <td className="text-center fw-semibold text-success align-middle">
+                              {duracion ? (
+                                <span>
+                                  <i className="bi bi-hourglass-split me-1"></i>
+                                  {duracion}
+                                </span>
+                              ) : (
+                                '—'
+                              )}
                             </td>
                           </tr>
                         );
@@ -379,13 +453,9 @@ export default function Marcas() {
                       </div>
                     )}
 
-                    <Button
-                      tipo="submit"
-                      color="azul"
-                      cargando={cargandoDispositivo}
-                      className="w-100 fw-bold"
-                      texto="💻 Autorizar Dispositivo Actual"
-                    />
+                    <Button tipo="submit" color="azul" cargando={cargandoDispositivo} className="w-100 fw-bold">
+                      <i className="bi bi-laptop me-2"></i> Autorizar Dispositivo Actual
+                    </Button>
                   </form>
                 }
               />
@@ -406,30 +476,51 @@ export default function Marcas() {
                   ) : (
                     <Tabla columnas={['Nombre', 'Descripción', 'Fecha Registro', 'Estado', 'Acciones']}>
                       {dispositivos.map((d) => (
-                        <tr key={d.id}>
-                          <td className="fw-bold">{d.nombre}</td>
-                          <td className="small text-muted">{d.descripcion || 'Sin descripción'}</td>
-                          <td className="small font-monospace">{new Date(d.fecha_registro).toLocaleDateString()}</td>
-                          <td className="text-center">
+                        <tr
+                          key={d.id}
+                          className={d.es_actual ? 'bg-light border-start border-4 border-primary' : ''}
+                        >
+                          <td className="fw-bold align-middle text-dark">
+                            {d.nombre}
+                            {d.es_actual && (
+                              <span className="badge bg-primary text-white ms-2 shadow-sm">
+                                <i className="bi bi-laptop me-1"></i> Este Navegador
+                              </span>
+                            )}
+                          </td>
+                          <td className="small text-muted align-middle">{d.descripcion || 'Sin descripción'}</td>
+                          <td className="small font-monospace align-middle text-dark">
+                            {new Date(d.fecha_registro).toLocaleDateString()}
+                          </td>
+                          <td className="text-center align-middle">
                             <span className={`badge ${d.estado === 'ACTIVO' ? 'bg-success' : 'bg-danger'}`}>
                               {d.estado}
                             </span>
                           </td>
-                          <td className="text-center">
+                          <td className="text-center align-middle">
                             <div className="btn-group btn-group-sm" role="group">
+                              {!d.es_actual && d.estado === 'ACTIVO' && (
+                                <button
+                                  className="btn btn-outline-primary fw-semibold"
+                                  title="Usar en este navegador"
+                                  onClick={() => handleSeleccionarDispositivo(d.id)}
+                                >
+                                  <i className="bi bi-box-arrow-in-down me-1"></i> Seleccionar
+                                </button>
+                              )}
                               <button
-                                className={`btn btn-outline-${d.estado === 'ACTIVO' ? 'warning' : 'success'}`}
-                                title={d.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'}
+                                className={`btn btn-${d.estado === 'ACTIVO' ? 'warning text-dark' : 'success'}`}
+                                title={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
                                 onClick={() => toggleEstadoDispositivo(d.id, d.estado)}
                               >
-                                {d.estado === 'ACTIVO' ? '⏸️ Inactivar' : '▶️ Activar'}
+                                {d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
                               </button>
                               <button
-                                className="btn btn-outline-danger"
+                                className="btn btn-danger"
                                 title="Eliminar"
                                 onClick={() => handleEliminarDispositivo(d.id)}
                               >
-                                🗑️
+                                <i className="bi bi-trash"></i>
                               </button>
                             </div>
                           </td>
@@ -437,6 +528,55 @@ export default function Marcas() {
                       ))}
                     </Tabla>
                   )
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* PESTAÑA 3: CONFIGURACIÓN IP (SOLO ADMINISTRADOR)              */}
+        {/* ============================================================== */}
+        {tabActiva === 'configuracion' && usuario.rol === 'administrador' && (
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-6">
+              <Card
+                responsivo={true}
+                card_width="100%"
+                titulo="Configuración de Red IP Autorizada"
+                texto_alineado="left"
+                chil_body={
+                  <form onSubmit={guardarRangoIp}>
+                    <p className="text-muted small mb-3">
+                      Establezca la dirección IP o notación CIDR permitida para registrar marcas (ej. <code>0.0.0.0/0</code>{' '}
+                      permite cualquier red, <code>127.0.0.1</code> solo local, o <code>192.168.1.0/24</code>).
+                    </p>
+
+                    <div className="mb-3">
+                      <Input
+                        label="Rango de IP Permitido (rango_ip_permitido) *"
+                        placeholder="Ej. 0.0.0.0/0 o 192.168.1.0/24"
+                        value={rangoIp}
+                        onChange={(e) => setRangoIp(e.target.value)}
+                      />
+                    </div>
+
+                    {mensajeIpConfig && (
+                      <div className="mb-3">
+                        <Alert
+                          color={mensajeIpConfig.tipo}
+                          fondoBlanco={true}
+                          texto={mensajeIpConfig.texto}
+                          dismissible={true}
+                          onDismiss={() => setMensajeIpConfig(null)}
+                        />
+                      </div>
+                    )}
+
+                    <Button tipo="submit" color="azul" cargando={cargandoIpConfig} className="w-100 fw-bold">
+                      <i className="bi bi-shield-lock me-2"></i> Guardar Rango de IP
+                    </Button>
+                  </form>
                 }
               />
             </div>

@@ -40,6 +40,16 @@ export async function seleccionarDispositivo(id) {
 }
 
 /**
+ * Desvincula el dispositivo actualmente asociado a este navegador.
+ * @returns {Promise<{ok: boolean, data: null, message: string}>}
+ */
+export async function deseleccionarDispositivo() {
+  return apiFetch('/dispositivos/deseleccionar', {
+    method: 'POST',
+  });
+}
+
+/**
  * Obtiene la lista de dispositivos registrados por el usuario autenticado.
  * @returns {Promise<{ok: boolean, data: Array, message: string}>}
  */

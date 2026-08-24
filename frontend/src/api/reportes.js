@@ -4,14 +4,13 @@ CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: reportes.js
 Autor: Gloriana Carrillo Alfaro
-Fecha: 18/08/2026
+Fecha: 24/08/2026
 Modulo: Frontend - Reportes
 Descripcion:
 Capa de acceso a la API del modulo de reportes. Expone funciones para
-consultar el reporte en formato JSON (via apiFetch, con cookies de
-sesion automaticas) y para disparar las descargas de exportacion en
-JSON, XML y PDF (via window.open, ya que son respuestas binarias/texto
-con Content-Disposition: attachment, no respuestas JSON estandar).
+consultar el reporte en formato JSON y para descargar las exportaciones
+en JSON, XML y PDF directamente mediante peticiones fetch asincronas
+con credenciales, generando la descarga en el cliente sin abandonar la aplicacion.
 //////////////////////////////////////////////////////////
 */
 
@@ -53,6 +52,47 @@ function construirQueryString(filtros) {
   return params.toString();
 }
 
+/**
+ * Descarga un archivo directamente en el navegador sin abrir nuevas pestañas.
+ * @param {string} endpoint - Endpoint de exportacion relativo a /api/reportes.
+ * @param {object} filtros - Filtros aplicados.
+ * @param {string} nombreArchivoPredeterminado - Nombre del archivo en caso de no venir en encabezados.
+ */
+async function descargarArchivo(endpoint, filtros, nombreArchivoPredeterminado) {
+  const qs = construirQueryString(filtros);
+  const url = `${API_URL}/reportes/exportar/${endpoint}${qs ? `?${qs}` : ''}`;
+
+  const respuesta = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!respuesta.ok) {
+    const errorJson = await respuesta.json().catch(() => null);
+    throw new Error(errorJson?.message || `Error ${respuesta.status} al exportar reporte`);
+  }
+
+  // Obtener el nombre del archivo del header Content-Disposition si existe
+  const disposition = respuesta.headers.get('Content-Disposition');
+  let nombreDescarga = nombreArchivoPredeterminado;
+  if (disposition && disposition.includes('filename=')) {
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) {
+      nombreDescarga = match[1];
+    }
+  }
+
+  const blob = await respuesta.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = nombreDescarga;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(blobUrl);
+}
+
 /*
 //////////////////////////////////////////////////////////
 FUNCIONES DE API
@@ -72,33 +112,25 @@ export async function obtenerReporte(filtros = {}) {
 }
 
 /**
- * Inicia la descarga del reporte en formato JSON.
- * Abre la URL en una nueva pestana; la cookie de sesion se envia
- * automaticamente porque es la misma sesion del navegador.
- * @param {object} [filtros={}] - Filtros opcionales { usuario, anio, mes, dia, departamento }.
+ * Inicia la descarga del reporte en formato JSON directamente en el cliente.
+ * @param {object} [filtros={}] - Filtros opcionales.
  */
-export function exportarReporteJSON(filtros = {}) {
-  const qs = construirQueryString(filtros);
-  const url = `${API_URL}/reportes/exportar/json${qs ? `?${qs}` : ''}`;
-  window.open(url, '_blank');
+export async function exportarReporteJSON(filtros = {}) {
+  return descargarArchivo('json', filtros, `reporte_marcas_${Date.now()}.json`);
 }
 
 /**
- * Inicia la descarga del reporte en formato XML.
- * @param {object} [filtros={}] - Filtros opcionales { usuario, anio, mes, dia, departamento }.
+ * Inicia la descarga del reporte en formato XML directamente en el cliente.
+ * @param {object} [filtros={}] - Filtros opcionales.
  */
-export function exportarReporteXML(filtros = {}) {
-  const qs = construirQueryString(filtros);
-  const url = `${API_URL}/reportes/exportar/xml${qs ? `?${qs}` : ''}`;
-  window.open(url, '_blank');
+export async function exportarReporteXML(filtros = {}) {
+  return descargarArchivo('xml', filtros, `reporte_marcas_${Date.now()}.xml`);
 }
 
 /**
- * Inicia la descarga del reporte en formato PDF.
- * @param {object} [filtros={}] - Filtros opcionales { usuario, anio, mes, dia, departamento }.
+ * Inicia la descarga del reporte en formato PDF directamente en el cliente.
+ * @param {object} [filtros={}] - Filtros opcionales.
  */
-export function exportarReportePDF(filtros = {}) {
-  const qs = construirQueryString(filtros);
-  const url = `${API_URL}/reportes/exportar/pdf${qs ? `?${qs}` : ''}`;
-  window.open(url, '_blank');
+export async function exportarReportePDF(filtros = {}) {
+  return descargarArchivo('pdf', filtros, `reporte_marcas_${Date.now()}.pdf`);
 }

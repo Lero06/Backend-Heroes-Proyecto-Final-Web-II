@@ -94,9 +94,43 @@ export default function Reportes() {
     );
   }, [filtros]);
 
-  const descargarJSON = () => exportarReporteJSON(filtros);
-  const descargarXML = () => exportarReporteXML(filtros);
-  const descargarPDF = () => exportarReportePDF(filtros);
+  const [descargando, setDescargando] = useState(null); // 'json' | 'xml' | 'pdf' | null
+
+  const descargarJSON = async () => {
+    try {
+      setDescargando('json');
+      setError('');
+      await exportarReporteJSON(filtros);
+    } catch (err) {
+      setError(err.message || 'Error al exportar a JSON');
+    } finally {
+      setDescargando(null);
+    }
+  };
+
+  const descargarXML = async () => {
+    try {
+      setDescargando('xml');
+      setError('');
+      await exportarReporteXML(filtros);
+    } catch (err) {
+      setError(err.message || 'Error al exportar a XML');
+    } finally {
+      setDescargando(null);
+    }
+  };
+
+  const descargarPDF = async () => {
+    try {
+      setDescargando('pdf');
+      setError('');
+      await exportarReportePDF(filtros);
+    } catch (err) {
+      setError(err.message || 'Error al exportar a PDF');
+    } finally {
+      setDescargando(null);
+    }
+  };
 
   if (!usuario) return null;
 
@@ -289,6 +323,8 @@ export default function Reportes() {
                 id="btn-exportar-xml"
                 color="amarillo"
                 className="w-100"
+                cargando={descargando === 'xml'}
+                disabled={Boolean(descargando)}
                 onClick={descargarXML}
                 texto="⬇ Exportar XML"
               />
@@ -298,6 +334,8 @@ export default function Reportes() {
                 id="btn-exportar-pdf"
                 color="rojo"
                 className="w-100"
+                cargando={descargando === 'pdf'}
+                disabled={Boolean(descargando)}
                 onClick={descargarPDF}
                 texto="⬇ Exportar PDF"
               />
@@ -307,6 +345,8 @@ export default function Reportes() {
                 id="btn-exportar-json"
                 color="verde"
                 className="w-100"
+                cargando={descargando === 'json'}
+                disabled={Boolean(descargando)}
                 onClick={descargarJSON}
                 texto="⬇ Exportar JSON"
               />

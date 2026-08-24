@@ -69,6 +69,13 @@ export default function Equipos() {
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  // Estado del modal de confirmación de eliminación
+  const [modalEliminar, setModalEliminar] = useState({
+    abierto: false,
+    equipo: null,
+    eliminando: false,
+  });
+
   /**
    * Carga el inventario aplicando el filtro de estado actual.
    */
@@ -111,18 +118,18 @@ export default function Equipos() {
   };
 
   /**
-   * Elimina un equipo del inventario, previa confirmacion del usuario.
-   * @param {object} equipo - Equipo a eliminar.
+   * Confirma la eliminación de un equipo desde el modal.
    */
-  const manejarEliminar = async (equipo) => {
-    const confirmado = window.confirm(
-      `¿Eliminar el equipo "${equipo.codigo}"? Esta accion no se puede deshacer.`
-    );
-    if (!confirmado) return;
+  const confirmarEliminar = async () => {
+    const equipo = modalEliminar.equipo;
+    if (!equipo) return;
 
     setError('');
     setMensaje('');
+    setModalEliminar((prev) => ({ ...prev, eliminando: true }));
+
     const respuesta = await eliminarEquipo(equipo.id);
+    setModalEliminar({ abierto: false, equipo: null, eliminando: false });
 
     if (!respuesta.ok) {
       setError(respuesta.message || 'No se pudo eliminar el equipo');
@@ -270,7 +277,7 @@ export default function Equipos() {
                               tamano="pequeño"
                               texto="Eliminar"
                               disabled={estaPrestado}
-                              onClick={() => manejarEliminar(equipo)}
+                              onClick={() => setModalEliminar({ abierto: true, equipo, eliminando: false })}
                             />
                           </div>
                         ) : (
@@ -284,6 +291,52 @@ export default function Equipos() {
             )
           }
         />
+
+        {/* ========== MODAL CONFIRMACIÓN ELIMINAR EQUIPO ========== */}
+        {modalEliminar.abierto && modalEliminar.equipo && (
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow">
+                <div className="modal-header bg-danger text-white">
+                  <h5 className="modal-title mb-0">Confirmar Eliminación de Equipo</h5>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setModalEliminar({ abierto: false, equipo: null, eliminando: false })}
+                  ></button>
+                </div>
+                <div className="modal-body py-4">
+                  <p className="mb-2 fs-6">
+                    ¿Está seguro de eliminar el equipo <strong>"{modalEliminar.equipo.codigo}"</strong>?
+                  </p>
+                  <p className="small text-muted mb-0">
+                    Descripción: {modalEliminar.equipo.descripcion || 'Sin descripción'}. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+                <div className="modal-footer bg-light">
+                  <Button
+                    color="gris"
+                    tamano="pequeño"
+                    texto="Cancelar"
+                    disabled={modalEliminar.eliminando}
+                    onClick={() => setModalEliminar({ abierto: false, equipo: null, eliminando: false })}
+                  />
+                  <Button
+                    color="rojo"
+                    tamano="pequeño"
+                    texto="Eliminar"
+                    cargando={modalEliminar.eliminando}
+                    onClick={confirmarEliminar}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

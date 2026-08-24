@@ -51,9 +51,15 @@ export default function Prestamos() {
   const [nuevoPrestamo, setNuevoPrestamo] = useState({ usuario_id: '', equipos_ids: [] });
   const [equipoSeleccionado, setEquipoSeleccionado] = useState('');
 
-  // Estado para detalles y devoluciones
+  // Estado para detalles y modal de confirmación de devolución
   const [prestamoSeleccionado, setPrestamoSeleccionado] = useState(null);
   const [mostrarDetalle, setMostrarDetalle] = useState(false);
+  const [modalDevolucion, setModalDevolucion] = useState({
+    abierto: false,
+    prestamoId: null,
+    equiposIds: [],
+    equiposInfo: [],
+  });
 
   // Filtros para listar
   const [filtros, setFiltros] = useState({ usuario_id: '', estado: '', fecha_inicio: '', fecha_fin: '' });
@@ -62,8 +68,8 @@ export default function Prestamos() {
   const cargarDatosIniciales = useCallback(async () => {
     const res = await obtenerDatosIniciales();
     if (res.ok) {
-      setUsuarios(res.data.usuarios);
-      setEquiposDisponibles(res.data.equipos);
+      setUsuarios(res.data.usuarios || []);
+      setEquiposDisponibles(res.data.equipos || []);
     } else {
       setError('No se pudieron cargar los datos iniciales.');
     }
@@ -76,7 +82,7 @@ export default function Prestamos() {
     const res = await listarPrestamos(filtros);
     setCargando(false);
     if (res.ok) {
-      setPrestamos(res.data);
+      setPrestamos(res.data || []);
     } else {
       setError(res.message || 'Error al cargar préstamos');
     }
@@ -128,12 +134,13 @@ export default function Prestamos() {
     const res = await crearPrestamo(nuevoPrestamo);
     setCargando(false);
     if (!res.ok) {
-      setError(res.message);
+      setError(res.message || 'Error al crear préstamo');
       return;
     }
     setExito('Préstamo creado exitosamente.');
     setNuevoPrestamo({ usuario_id: '', equipos_ids: [] });
-    cargarPrestamos();
+    setEquipoSeleccionado('');
+    await Promise.all([cargarDatosIniciales(), cargarPrestamos()]);
   };
 
   // Ver detalle de un préstamo
@@ -143,26 +150,41 @@ export default function Prestamos() {
       setPrestamoSeleccionado(res.data);
       setMostrarDetalle(true);
     } else {
-      setError(res.message);
+      setError(res.message || 'Error al obtener detalle');
     }
   };
 
-  // Devolver equipos (individual o completa)
-  const manejarDevolver = async (prestamoId, equiposIds) => {
+  // Abrir modal de confirmación de devolución
+  const solicitarDevolucion = (prestamoId, equipos) => {
+    setModalDevolucion({
+      abierto: true,
+      prestamoId,
+      equiposIds: equipos.map(e => e.equipo_id),
+      equiposInfo: equipos,
+    });
+  };
+
+  // Confirmar y procesar devolución
+  const confirmarDevolucion = async () => {
+    const { prestamoId, equiposIds } = modalDevolucion;
+    if (!prestamoId || equiposIds.length === 0) return;
+
     setError('');
     setExito('');
-    if (!window.confirm('¿Confirmar devolución de los equipos seleccionados?')) return;
     setCargando(true);
     const res = await devolverEquipos(prestamoId, equiposIds);
     setCargando(false);
+    setModalDevolucion({ abierto: false, prestamoId: null, equiposIds: [], equiposInfo: [] });
+
     if (!res.ok) {
-      setError(res.message);
+      setError(res.message || 'Error al devolver equipos');
       return;
     }
+
     setExito('Devolución registrada correctamente.');
     setMostrarDetalle(false);
     setPrestamoSeleccionado(null);
-    cargarPrestamos();
+    await Promise.all([cargarDatosIniciales(), cargarPrestamos()]);
   };
 
   // Renderizado condicional de seguridad (admin)
@@ -213,8 +235,14 @@ export default function Prestamos() {
                     <div className="flex-grow-1">
                       <Select
                         label="Agregar Equipo"
-                        texto="Seleccione un equipo disponible"
-                        options={equiposDisponibles.map(eq => ({ value: eq.id, text: `${eq.codigo} - ${eq.descripcion}` }))}
+                        texto={
+                          equiposDisponibles.filter(eq => !nuevoPrestamo.equipos_ids.includes(eq.id)).length === 0
+                            ? '— No hay más equipos disponibles —'
+                            : 'Seleccione un equipo disponible'
+                        }
+                        options={equiposDisponibles
+                          .filter(eq => !nuevoPrestamo.equipos_ids.includes(eq.id))
+                          .map(eq => ({ value: eq.id, text: `${eq.codigo} - ${eq.descripcion}` }))}
                         value={equipoSeleccionado}
                         onChange={(e) => setEquipoSeleccionado(e.target.value)}
                       />
@@ -222,18 +250,22 @@ export default function Prestamos() {
                     <Button type="button" color="azul" texto="Agregar" onClick={manejarAgregarEquipo} />
                   </div>
                   <div className="mt-2">
-                    <strong>Equipos seleccionados:</strong>
-                    <ul className="list-unstyled">
-                      {nuevoPrestamo.equipos_ids.map((id) => {
-                        const eq = equiposDisponibles.find(e => e.id === id);
-                        return (
-                          <li key={id} className="d-flex justify-content-between align-items-center">
-                            <span>{eq ? `${eq.codigo} - ${eq.descripcion}` : `ID ${id}`}</span>
-                            <Button type="button" color="rojo" tamano="pequeño" texto="Quitar" onClick={() => manejarQuitarEquipo(id)} />
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <strong>Equipos seleccionados ({nuevoPrestamo.equipos_ids.length}):</strong>
+                    {nuevoPrestamo.equipos_ids.length === 0 ? (
+                      <p className="text-muted small mb-0">No has agregado ningún equipo aún.</p>
+                    ) : (
+                      <ul className="list-unstyled mt-1">
+                        {nuevoPrestamo.equipos_ids.map((id) => {
+                          const eq = equiposDisponibles.find(e => e.id === id);
+                          return (
+                            <li key={id} className="d-flex justify-content-between align-items-center p-2 mb-1 border rounded bg-light">
+                              <span><strong>{eq?.codigo}</strong> — {eq?.descripcion}</span>
+                              <Button type="button" color="rojo" tamano="pequeño" texto="Quitar" onClick={() => manejarQuitarEquipo(id)} />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </div>
                 <div className="col-12 col-md-2 d-flex align-items-end">
@@ -353,7 +385,7 @@ export default function Prestamos() {
                               color="verde"
                               tamano="pequeño"
                               texto="Devolver"
-                              onClick={() => manejarDevolver(prestamoSeleccionado.id, [d.equipo_id])}
+                              onClick={() => solicitarDevolucion(prestamoSeleccionado.id, [d])}
                             />
                           )}
                         </td>
@@ -367,14 +399,67 @@ export default function Prestamos() {
                       color="verde"
                       texto="Devolver todos los pendientes"
                       onClick={() => {
-                        const pendientes = prestamoSeleccionado.detalles
-                          .filter(d => d.estado_devolucion === 'PENDIENTE')
-                          .map(d => d.equipo_id);
-                        manejarDevolver(prestamoSeleccionado.id, pendientes);
+                        const pendientes = prestamoSeleccionado.detalles.filter(d => d.estado_devolucion === 'PENDIENTE');
+                        solicitarDevolucion(prestamoSeleccionado.id, pendientes);
                       }}
                     />
                   )}
                   <Button color="gris" texto="Cerrar" onClick={() => setMostrarDetalle(false)} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========== MODAL DE CONFIRMACIÓN DE DEVOLUCIÓN ========== */}
+        {modalDevolucion.abierto && (
+          <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }} tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow-lg border-0">
+                <div className="modal-header bg-success text-white">
+                  <h5 className="modal-title">
+                    <i className="bi bi-arrow-counterclockwise me-2"></i>
+                    Confirmar Devolución
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setModalDevolucion({ abierto: false, prestamoId: null, equiposIds: [], equiposInfo: [] })}
+                  />
+                </div>
+                <div className="modal-body p-4">
+                  <p className="mb-3">
+                    ¿Está seguro de registrar la devolución de los siguientes <strong>{modalDevolucion.equiposIds.length}</strong> equipo(s)?
+                  </p>
+                  <ul className="list-group mb-3">
+                    {modalDevolucion.equiposInfo.map((eq, index) => (
+                      <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{eq.codigo}</strong>
+                          <span className="text-muted small d-block">{eq.descripcion}</span>
+                        </div>
+                        <span className="badge bg-primary rounded-pill">Disponible tras devolver</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="alert alert-info py-2 small mb-0">
+                    <i className="bi bi-info-circle me-1"></i>
+                    Los equipos volverán al estado <strong>DISPONIBLE</strong> inmediatamente.
+                  </div>
+                </div>
+                <div className="modal-footer bg-light">
+                  <Button
+                    color="gris"
+                    texto="Cancelar"
+                    disabled={cargando}
+                    onClick={() => setModalDevolucion({ abierto: false, prestamoId: null, equiposIds: [], equiposInfo: [] })}
+                  />
+                  <Button
+                    color="verde"
+                    cargando={cargando}
+                    texto="✓ Sí, confirmar devolución"
+                    onClick={confirmarDevolucion}
+                  />
                 </div>
               </div>
             </div>

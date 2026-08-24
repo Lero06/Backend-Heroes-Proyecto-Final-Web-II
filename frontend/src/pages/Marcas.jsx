@@ -22,6 +22,7 @@ import { marcarAsistencia, obtenerEstadoActual, obtenerMisMarcas } from '../api/
 import {
   registrarDispositivo,
   seleccionarDispositivo,
+  deseleccionarDispositivo,
   obtenerMisDispositivos,
   cambiarEstadoDispositivo,
   eliminarDispositivo,
@@ -53,6 +54,11 @@ export default function Marcas() {
   const [nuevoDispositivo, setNuevoDispositivo] = useState({ nombre: '', descripcion: '' });
   const [cargandoDispositivo, setCargandoDispositivo] = useState(false);
   const [mensajeDispositivo, setMensajeDispositivo] = useState(null);
+  const [modalEliminarDisp, setModalEliminarDisp] = useState({
+    abierto: false,
+    dispositivo: null,
+    eliminando: false,
+  });
 
   // Estado de Configuración IP (Solo Admin)
   const [rangoIp, setRangoIp] = useState('0.0.0.0/0');
@@ -154,6 +160,16 @@ export default function Marcas() {
     }
   };
 
+  // Desmarcar / Desvincular dispositivo del navegador actual
+  const handleDeseleccionarDispositivo = async () => {
+    const res = await deseleccionarDispositivo();
+    if (res.ok) {
+      cargarDispositivos();
+      cargarDatosMarcas();
+      setMensajeDispositivo({ tipo: 'verde', texto: 'Dispositivo desmarcado de este navegador.' });
+    }
+  };
+
   // Cambiar estado del dispositivo
   const toggleEstadoDispositivo = async (id, estadoActual) => {
     const nuevoEstado = estadoActual === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
@@ -165,12 +181,19 @@ export default function Marcas() {
   };
 
   // Eliminar dispositivo
-  const handleEliminarDispositivo = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar este dispositivo autorizado?')) return;
-    const res = await eliminarDispositivo(id);
+  const confirmarEliminarDispositivo = async () => {
+    const disp = modalEliminarDisp.dispositivo;
+    if (!disp) return;
+
+    setModalEliminarDisp((prev) => ({ ...prev, eliminando: true }));
+    const res = await eliminarDispositivo(disp.id);
+    setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false });
+
     if (res.ok) {
       cargarDispositivos();
       cargarDatosMarcas();
+    } else {
+      setMensajeDispositivo({ tipo: 'rojo', texto: res.message || 'Error al eliminar el dispositivo' });
     }
   };
 
@@ -497,31 +520,34 @@ export default function Marcas() {
                               {d.estado}
                             </span>
                           </td>
-                          <td className="text-center align-middle">
-                            <div className="btn-group btn-group-sm" role="group">
-                              {!d.es_actual && d.estado === 'ACTIVO' && (
-                                <button
-                                  className="btn btn-outline-primary fw-semibold"
-                                  title="Usar en este navegador"
-                                  onClick={() => handleSeleccionarDispositivo(d.id)}
-                                >
-                                  <i className="bi bi-box-arrow-in-down me-1"></i> Seleccionar
-                                </button>
-                              )}
-                              <button
-                                className={`btn btn-${d.estado === 'ACTIVO' ? 'warning text-dark' : 'success'}`}
-                                title={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                          <td className="text-center align-middle" style={{ whiteSpace: 'nowrap', minWidth: '270px' }}>
+                            <div className="d-flex justify-content-center gap-2 align-items-center">
+                              <Button
+                                color="azul"
+                                tamano="pequeño"
+                                texto="Seleccionar"
+                                disabled={d.es_actual || d.estado !== 'ACTIVO'}
+                                title={
+                                  d.es_actual
+                                    ? 'Ya está en uso en este navegador'
+                                    : d.estado !== 'ACTIVO'
+                                    ? 'Activa el dispositivo primero'
+                                    : 'Usar en este navegador'
+                                }
+                                onClick={() => handleSeleccionarDispositivo(d.id)}
+                              />
+                              <Button
+                                color={d.estado === 'ACTIVO' ? 'amarillo' : 'verde'}
+                                tamano="pequeño"
+                                texto={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
                                 onClick={() => toggleEstadoDispositivo(d.id, d.estado)}
-                              >
-                                {d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
-                              </button>
-                              <button
-                                className="btn btn-danger"
-                                title="Eliminar"
-                                onClick={() => handleEliminarDispositivo(d.id)}
-                              >
-                                <i className="bi bi-trash"></i>
-                              </button>
+                              />
+                              <Button
+                                color="rojo"
+                                tamano="pequeño"
+                                texto="Eliminar"
+                                onClick={() => setModalEliminarDisp({ abierto: true, dispositivo: d, eliminando: false })}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -579,6 +605,51 @@ export default function Marcas() {
                   </form>
                 }
               />
+            </div>
+          </div>
+        )}
+        {/* ========== MODAL CONFIRMACIÓN ELIMINAR DISPOSITIVO ========== */}
+        {modalEliminarDisp.abierto && modalEliminarDisp.dispositivo && (
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow">
+                <div className="modal-header bg-danger text-white">
+                  <h5 className="modal-title mb-0">Confirmar Eliminación de Dispositivo</h5>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false })}
+                  ></button>
+                </div>
+                <div className="modal-body py-4">
+                  <p className="mb-2 fs-6">
+                    ¿Está seguro de eliminar el dispositivo autorizado <strong>"{modalEliminarDisp.dispositivo.nombre}"</strong>?
+                  </p>
+                  <p className="small text-muted mb-0">
+                    Descripción: {modalEliminarDisp.dispositivo.descripcion || 'Sin descripción'}. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+                <div className="modal-footer bg-light">
+                  <Button
+                    color="gris"
+                    tamano="pequeño"
+                    texto="Cancelar"
+                    disabled={modalEliminarDisp.eliminando}
+                    onClick={() => setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false })}
+                  />
+                  <Button
+                    color="rojo"
+                    tamano="pequeño"
+                    texto="Eliminar"
+                    cargando={modalEliminarDisp.eliminando}
+                    onClick={confirmarEliminarDispositivo}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

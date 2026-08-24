@@ -250,21 +250,19 @@ export default function Departamentos() {
                         {d.creado_en ? new Date(d.creado_en).toLocaleDateString() : '—'}
                       </td>
                       <td className="text-center">
-                        <div className="btn-group btn-group-sm" role="group">
-                          <button
-                            className="btn btn-outline-primary"
-                            title="Editar"
+                        <div className="d-flex justify-content-center gap-2 align-items-center">
+                          <Button
+                            color="azul"
+                            tamano="pequeño"
+                            texto="Editar"
                             onClick={() => abrirEditar(d)}
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            className="btn btn-outline-danger"
-                            title="Eliminar"
+                          />
+                          <Button
+                            color="rojo"
+                            tamano="pequeño"
+                            texto="Eliminar"
                             onClick={() => setModalEliminar({ abierto: true, departamento: d })}
-                          >
-                            🗑️ Eliminar
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>
@@ -371,20 +369,22 @@ export default function Departamentos() {
                     El sistema comprobará que ningún usuario pertenezca a este departamento antes de procesar la eliminación.
                   </p>
                 </div>
-                <div className="modal-footer bg-light">
-                  <Button
-                    color="gris"
-                    texto="Cancelar"
-                    disabled={cargando}
-                    onClick={() => setModalEliminar({ abierto: false, departamento: null })}
-                  />
-                  <Button
-                    color="rojo"
-                    cargando={cargando}
-                    texto="🗑️ Sí, eliminar departamento"
-                    onClick={confirmarEliminar}
-                  />
-                </div>
+                  <div className="modal-footer bg-light">
+                    <Button
+                      color="gris"
+                      tamano="pequeño"
+                      texto="Cancelar"
+                      disabled={cargando}
+                      onClick={() => setModalEliminar({ abierto: false, departamento: null })}
+                    />
+                    <Button
+                      color="rojo"
+                      tamano="pequeño"
+                      cargando={cargando}
+                      texto="Eliminar"
+                      onClick={confirmarEliminar}
+                    />
+                  </div>
               </div>
             </div>
           </div>

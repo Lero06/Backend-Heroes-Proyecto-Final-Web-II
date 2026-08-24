@@ -29,6 +29,7 @@ import {
 import {
   registrarDispositivo,
   seleccionarDispositivo,
+  deseleccionarDispositivo,
   listarMisDispositivos,
   cambiarEstadoDispositivo,
   eliminarDispositivo,
@@ -44,6 +45,9 @@ RUTAS
 
 // Registrar el dispositivo actual desde el que navega el usuario
 router.post('/registrar', verificarSesion, validar(esquemaRegistrarDispositivo), registrarDispositivo);
+
+// Deseleccionar el dispositivo en este navegador
+router.post('/deseleccionar', verificarSesion, deseleccionarDispositivo);
 
 // Seleccionar un dispositivo ya registrado para usar en este navegador
 router.post('/:id/seleccionar', verificarSesion, seleccionarDispositivo);

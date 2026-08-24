@@ -119,6 +119,21 @@ export async function seleccionarDispositivo(req, res, next) {
 }
 
 /**
+ * Desvincula cualquier dispositivo del navegador actual limpiando la cookie DEVICE_COOKIE.
+ * @param {object} req - Request de Express.
+ * @param {object} res - Response de Express.
+ * @param {Function} next - Middleware de manejo de errores.
+ */
+export async function deseleccionarDispositivo(req, res, next) {
+  try {
+    res.clearCookie(DEVICE_COOKIE);
+    return ok(res, null, 'Dispositivo deseleccionado en este navegador');
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * Obtiene la lista de todos los dispositivos autorizados del usuario autenticado,
  * identificando cuál es el que está activo en el navegador actual.
  * @param {object} req - Request de Express (req.usuario.id, req.cookies).

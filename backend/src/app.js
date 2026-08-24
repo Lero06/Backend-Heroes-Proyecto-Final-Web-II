@@ -32,8 +32,10 @@ import authRoutes from './modules/auth/auth.routes.js';
 import departamentosRoutes from './modules/departamentos/departamentos.routes.js';
 import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
+import equiposRoutes from './modules/equipos/equipos.routes.js';
 import marcasRoutes from './modules/marcas/marcas.routes.js';
-import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js';
+import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js'
+import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
 import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 
 /*
@@ -92,8 +94,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/departamentos', departamentosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/reportes', reportesRoutes);
+app.use('/api/equipos', equiposRoutes);
 app.use('/api/dispositivos', dispositivosRoutes);
 app.use('/api/marcas', marcasRoutes);
+app.use('/api/prestamos', prestamosRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 
 app.get('/api/health', (req, res) => {

@@ -7,10 +7,9 @@ Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
-Punto de entrada del backend. Verifica que la conexion a MySQL
-funcione antes de levantar el servidor HTTP, para fallar rapido si
-Docker o las credenciales de la base de datos no estan bien configuradas.
-Adaptado a ES Modules (import/export).
+Punto de entrada del backend. Inicia el servidor HTTP en el puerto
+configurado (0.0.0.0) para despliegues en la nube (Railway/Render)
+y verifica la conexion a MySQL sin bloquear la aplicacion.
 //////////////////////////////////////////////////////////
 */
 
@@ -38,22 +37,24 @@ FUNCION PRINCIPAL
 */
 
 /**
- * Inicializa el servidor: primero valida la conexion a la base de
- * datos y, si es exitosa, levanta el servidor Express.
+ * Inicializa el servidor HTTP en 0.0.0.0 para permitir el enrutamiento
+ * del proxy de Railway/Render y prueba la conexion a la base de datos.
  * @returns {Promise<void>}
  */
 async function iniciar() {
+  // 1. Escuchar en 0.0.0.0 y process.env.PORT para que Railway pueda enrutar el trafico HTTP
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor escuchando en http://0.0.0.0:${PORT}`);
+  });
+
+  // 2. Verificar conexion a MySQL (si falla, muestra un log de advertencia sin tumbar el proceso)
   try {
     await pool.query('SELECT 1');
     console.log('Conexion a MySQL exitosa');
   } catch (err) {
-    console.error('No se pudo conectar a MySQL:', err.message);
-    process.exit(1);
+    console.error('Advertencia BD: No se pudo conectar a MySQL:', err.message);
+    console.error('Revisa que las variables DB_HOST, DB_PORT, DB_NAME, DB_USER y DB_PASSWORD esten bien configuradas en Railway.');
   }
-
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-  });
 }
 
 iniciar();

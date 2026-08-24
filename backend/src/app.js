@@ -52,7 +52,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Permitir solicitudes sin origen (ej. Postman o solicitudes server-to-server)
     if (!origin) return callback(null, true);
-    
+
     // En desarrollo o desplegado en Vercel (*.vercel.app), permitir la conexion con credenciales
     if (
       origin.includes('localhost') ||
@@ -61,7 +61,7 @@ const corsOptions = {
     ) {
       return callback(null, true);
     }
-    
+
     // Por defecto permitir el origin recibido para evitar bloqueos
     return callback(null, true);
   },
@@ -70,9 +70,14 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-device-id'],
 };
 
-// Responder preflight OPTIONS globalmente antes de cualquier ruta
+// El middleware cors() ya responde automaticamente a las solicitudes
+// preflight OPTIONS para todas las rutas; NO se necesita (ni se debe usar)
+// app.options('*', cors(corsOptions)) porque el patron '*' como ruta
+// hace que path-to-regexp lance una excepcion al arrancar en versiones
+// recientes de Express/path-to-regexp, tumbando el proceso antes de
+// que llegue a escuchar en el puerto (causa raiz del 502 "Application
+// failed to respond" en Railway).
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());

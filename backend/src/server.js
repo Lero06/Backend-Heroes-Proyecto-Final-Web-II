@@ -7,53 +7,33 @@ Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
-Punto de entrada del backend. Inicia el servidor HTTP en el puerto
-configurado (0.0.0.0) para despliegues en la nube (Railway/Render)
-y verifica la conexion a MySQL sin bloquear la aplicacion.
+Punto de entrada del backend. Inicia el servidor HTTP escuchando en el
+puerto dinamico asignado por Railway/Render (process.env.PORT) y en 0.0.0.0.
 //////////////////////////////////////////////////////////
 */
 
-/*
-//////////////////////////////////////////////////////////
-IMPORTS
-//////////////////////////////////////////////////////////
-*/
+// Capturar el puerto de Railway antes de cargar variables locales de .env
+const PORT_RAILWAY = process.env.PORT;
+
+import dotenv from 'dotenv';
+dotenv.config();
 
 import app from './app.js';
 import pool from './config/db.js';
 
-/*
-//////////////////////////////////////////////////////////
-CONSTANTES
-//////////////////////////////////////////////////////////
-*/
+// Si Railway proporciono un puerto, usarlo; de lo contrario usar 4000 para desarrollo local
+const PORT = Number(PORT_RAILWAY || process.env.PORT || 4000);
 
-const PORT = process.env.PORT || 4000;
-
-/*
-//////////////////////////////////////////////////////////
-FUNCION PRINCIPAL
-//////////////////////////////////////////////////////////
-*/
-
-/**
- * Inicializa el servidor HTTP en 0.0.0.0 para permitir el enrutamiento
- * del proxy de Railway/Render y prueba la conexion a la base de datos.
- * @returns {Promise<void>}
- */
 async function iniciar() {
-  // 1. Escuchar en 0.0.0.0 y process.env.PORT para que Railway pueda enrutar el trafico HTTP
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor escuchando en http://0.0.0.0:${PORT}`);
+    console.log(`[SERVER] Escuchando exitosamente en http://0.0.0.0:${PORT}`);
   });
 
-  // 2. Verificar conexion a MySQL (si falla, muestra un log de advertencia sin tumbar el proceso)
   try {
     await pool.query('SELECT 1');
-    console.log('Conexion a MySQL exitosa');
+    console.log('[MYSQL] Conexion a la base de datos exitosa');
   } catch (err) {
-    console.error('Advertencia BD: No se pudo conectar a MySQL:', err.message);
-    console.error('Revisa que las variables DB_HOST, DB_PORT, DB_NAME, DB_USER y DB_PASSWORD esten bien configuradas en Railway.');
+    console.error('[MYSQL ERROR] No se pudo conectar a la base de datos:', err.message);
   }
 }
 

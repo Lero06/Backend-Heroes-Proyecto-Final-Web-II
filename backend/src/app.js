@@ -8,9 +8,8 @@ Fecha: 22/08/2026
 Modulo: Arquitectura Base
 Descripcion:
 Configuracion central de la aplicacion Express: middlewares globales,
-montaje de las rutas de cada modulo (Auth, Departamentos, Usuarios,
-Reportes, Marcas, Dispositivos y Configuración) y manejador de errores centralizado.
-Adaptado a ES Modules (import/export).
+configuracion robusta de CORS para despliegue en Vercel + Railway,
+montaje de las rutas de cada modulo y manejador de errores centralizado.
 //////////////////////////////////////////////////////////
 */
 
@@ -26,8 +25,6 @@ dotenv.config();
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import manejadorErrores from './middlewares/error.middleware.js';
 
@@ -35,30 +32,50 @@ import authRoutes from './modules/auth/auth.routes.js';
 import departamentosRoutes from './modules/departamentos/departamentos.routes.js';
 import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
-import equiposRoutes from './modules/equipos/equipos.routes.js';
 import marcasRoutes from './modules/marcas/marcas.routes.js';
-import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js'
-import prestamosRoutes from './modules/prestamos/prestamos.routes.js';
+import dispositivosRoutes from './modules/dispositivos/dispositivos.routes.js';
 import configuracionRoutes from './modules/configuracion/configuracion.routes.js';
 
 /*
 //////////////////////////////////////////////////////////
-CONFIGURACION DE LA APP
+CONFIGURACION DE LA APP Y PROXY
 //////////////////////////////////////////////////////////
 */
 
 const app = express();
 
-// __dirname no existe de forma nativa en ESM; se reconstruye asi.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Confiar en los proxies de Railway / Vercel para procesar HTTPS e IPs correctamente
+app.set('trust proxy', 1);
 
-app.use(cors({ origin: true, credentials: true })); // credentials: true porque usamos cookies de sesion
+// Configuracion de CORS robusta para despliegues cruzados (Vercel <-> Railway)
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (ej. Postman o solicitudes server-to-server)
+    if (!origin) return callback(null, true);
+    
+    // En desarrollo o desplegado en Vercel (*.vercel.app), permitir la conexion con credenciales
+    if (
+      origin.includes('localhost') ||
+      origin.endsWith('.vercel.app') ||
+      (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL)
+    ) {
+      return callback(null, true);
+    }
+    
+    // Por defecto permitir el origin recibido para evitar bloqueos
+    return callback(null, true);
+  },
+  credentials: true, // Requerido para cookies HttpOnly (sid, dispositivo_id)
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-device-id'],
+};
+
+// Responder preflight OPTIONS globalmente antes de cualquier ruta
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 app.use(cookieParser());
-
-// Sirve las imagenes subidas (ej. fotos de equipos) como archivos estaticos
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 /*
 //////////////////////////////////////////////////////////
@@ -66,15 +83,12 @@ RUTAS DE CADA MODULO
 //////////////////////////////////////////////////////////
 */
 
-// Cada integrante monta su modulo aqui cuando lo tenga listo:
 app.use('/api/auth', authRoutes);
 app.use('/api/departamentos', departamentosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/reportes', reportesRoutes);
-app.use('/api/equipos', equiposRoutes);
 app.use('/api/dispositivos', dispositivosRoutes);
 app.use('/api/marcas', marcasRoutes);
-app.use('/api/prestamos', prestamosRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 
 app.get('/api/health', (req, res) => {

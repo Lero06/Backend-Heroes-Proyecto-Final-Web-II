@@ -7,11 +7,9 @@ Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Autenticacion / Sesiones
 Descripcion:
-Manejo de sesiones respaldado en la tabla `sesiones` de MySQL (no usa
-memoria del servidor, por lo que sobrevive a reinicios y funciona
-igual con varios procesos). Cualquier modulo del proyecto puede usar
-estas funciones para crear, consultar o destruir una sesion.
-Adaptado a ES Modules (import/export).
+Manejo de sesiones respaldado en la tabla `sesiones` de MySQL y
+configuracion universal de opciones de cookies para entorno de
+desarrollo local y despliegues entre dominios (Vercel <-> Railway).
 //////////////////////////////////////////////////////////
 */
 
@@ -32,6 +30,34 @@ CONSTANTES
 
 export const SESSION_COOKIE = 'sid';
 export const DEFAULT_MAX_AGE_MIN = Number(process.env.SESSION_MAX_AGE_MIN || 120);
+
+/*
+//////////////////////////////////////////////////////////
+UTILIDAD DE OPCIONES DE COOKIE
+//////////////////////////////////////////////////////////
+*/
+
+/**
+ * Genera las opciones de cookie compatibles con cross-site (Vercel <-> Railway).
+ * En produccion requiere `sameSite: 'none'` y `secure: true`.
+ * @param {Date|null} [expiraEn] - Fecha de expiracion opcional.
+ * @param {number|null} [maxAgeMs] - Tiempo maximo de vida en ms opcional.
+ * @returns {object} Objeto de configuracion para res.cookie.
+ */
+export function getCookieOptions(expiraEn = null, maxAgeMs = null) {
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.RAILWAY_ENVIRONMENT) || Boolean(process.env.PORT);
+
+  const options = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  };
+
+  if (expiraEn) options.expires = expiraEn;
+  if (maxAgeMs) options.maxAge = maxAgeMs;
+
+  return options;
+}
 
 /*
 //////////////////////////////////////////////////////////

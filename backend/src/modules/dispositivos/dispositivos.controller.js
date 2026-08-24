@@ -22,6 +22,7 @@ IMPORTS
 
 import { v4 as uuidv4 } from 'uuid';
 import { ok, error } from '../../utils/response.js';
+import { getCookieOptions } from '../../utils/session.js';
 import * as dispositivosModel from './dispositivos.model.js';
 
 /*
@@ -52,7 +53,6 @@ export async function registrarDispositivo(req, res, next) {
     const { nombre, descripcion } = req.body;
     const usuarioId = req.usuario.id;
 
-    // Generar UUID unico para identificar este dispositivo/navegador
     const dispositivoId = uuidv4();
 
     await dispositivosModel.crearDispositivo({
@@ -62,13 +62,7 @@ export async function registrarDispositivo(req, res, next) {
       descripcion,
     });
 
-    // Establecer la cookie HTTP-Only duradera con el identificador del dispositivo
-    res.cookie(DEVICE_COOKIE, dispositivoId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: ONE_YEAR_MS,
-    });
+    res.cookie(DEVICE_COOKIE, dispositivoId, getCookieOptions(null, ONE_YEAR_MS));
 
     const nuevoDispositivo = await dispositivosModel.obtenerDispositivoPorId(dispositivoId);
 
@@ -104,13 +98,7 @@ export async function seleccionarDispositivo(req, res, next) {
       return error(res, 'No se puede seleccionar un dispositivo INACTIVO. Actívelo primero.', 400);
     }
 
-    // Asignar cookie al dispositivo elegido
-    res.cookie(DEVICE_COOKIE, id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: ONE_YEAR_MS,
-    });
+    res.cookie(DEVICE_COOKIE, id, getCookieOptions(null, ONE_YEAR_MS));
 
     return ok(res, dispositivo, `El navegador ahora está utilizando el dispositivo "${dispositivo.nombre}"`);
   } catch (err) {
@@ -136,7 +124,7 @@ export async function deseleccionarDispositivo(req, res, next) {
 /**
  * Obtiene la lista de todos los dispositivos autorizados del usuario autenticado,
  * identificando cuál es el que está activo en el navegador actual.
- * @param {object} req - Request de Express (req.usuario.id, req.cookies).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -155,7 +143,7 @@ export async function listarMisDispositivos(req, res, next) {
 
 /**
  * Cambia el estado (ACTIVO o INACTIVO) de un dispositivo perteneciente al usuario.
- * @param {object} req - Request de Express (req.params.id, req.body.estado, req.usuario.id).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -187,7 +175,7 @@ export async function cambiarEstadoDispositivo(req, res, next) {
 
 /**
  * Elimina un dispositivo autorizado de un usuario.
- * @param {object} req - Request de Express (req.params.id, req.usuario.id).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -202,9 +190,8 @@ export async function eliminarDispositivo(req, res, next) {
       return error(res, 'Dispositivo no encontrado o no pertenece a este usuario', 404);
     }
 
-    // Si el dispositivo eliminado coincide con el de la cookie actual, la limpiamos
     if (req.cookies?.[DEVICE_COOKIE] === id) {
-      res.clearCookie(DEVICE_COOKIE);
+      res.clearCookie(DEVICE_COOKIE, getCookieOptions());
     }
 
     return ok(res, null, 'Dispositivo eliminado correctamente');

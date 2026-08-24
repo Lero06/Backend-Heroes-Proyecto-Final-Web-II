@@ -23,8 +23,8 @@ IMPORTS
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { ok, error } from '../../utils/response.js';
-import { crearSesion, destruirSesion, SESSION_COOKIE } from '../../utils/session.js';
-import authModel from './auth.model.js';
+import { crearSesion, destruirSesion, SESSION_COOKIE, getCookieOptions } from '../../utils/session.js';
+import * as authModel from './auth.model.js';
 
 /*
 //////////////////////////////////////////////////////////
@@ -44,13 +44,9 @@ FUNCIONES PRINCIPALES
 
 /**
  * Registra un nuevo usuario en el sistema.
- * Valida que la contrasena y su confirmacion coincidan, que el correo
- * y el usuario no esten duplicados, y guarda la contrasena hasheada
- * con bcrypt (nunca en texto plano).
- * @param {object} req - Request de Express (req.body con los datos del formulario).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
- * @param {Function} next - Siguiente middleware (manejo de errores).
- * @returns {Promise<object>} Respuesta HTTP con el usuario creado (sin la contrasena).
+ * @param {Function} next - Siguiente middleware.
  */
 export async function registrar(req, res, next) {
   try {
@@ -64,13 +60,10 @@ export async function registrar(req, res, next) {
       confirmar_password,
     } = req.body;
 
-    // Regla de negocio: confirmacion de contrasena (no lo cubre el
-    // validate.middleware porque compara dos campos entre si)
     if (password !== confirmar_password) {
       return error(res, 'La contrasena y su confirmacion no coinciden', 400);
     }
 
-    // Regla de negocio: correo y usuario unicos (requiere consultar la BD)
     const [correoExistente, usuarioExistente] = await Promise.all([
       authModel.buscarPorCorreo(correo),
       authModel.buscarPorUsuario(usuario),
@@ -94,30 +87,24 @@ export async function registrar(req, res, next) {
       rol_id: rolId,
     });
 
-    // Nunca se devuelve el password_hash en la respuesta
     return ok(res, { id: nuevoId, usuario, correo }, 'Usuario registrado correctamente', 201);
   } catch (err) {
-    next(err); // lo captura error.middleware.js
+    next(err);
   }
 }
 
 /**
- * Inicia sesion de un usuario existente.
- * Acepta usuario o correo como identificador. Si las credenciales son
- * validas, crea una sesion en la tabla `sesiones` y la entrega al
- * cliente como cookie HttpOnly.
- * @param {object} req - Request de Express (req.body con identificador y password).
+ * Inicia sesion de un usuario existente y establece la cookie sid.
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
- * @param {Function} next - Siguiente middleware (manejo de errores).
- * @returns {Promise<object>} Respuesta HTTP con los datos basicos del usuario autenticado.
+ * @param {Function} next - Siguiente middleware.
  */
 export async function login(req, res, next) {
   try {
-    const { identificador, password } = req.body; // usuario o correo
+    const { identificador, password } = req.body;
 
     const usuario = await authModel.buscarParaLogin(identificador);
 
-    // Mensaje generico: no revela si fallo el usuario o la contrasena
     if (!usuario) return error(res, 'Credenciales invalidas', 401);
     if (!usuario.activo) return error(res, 'La cuenta se encuentra inactiva', 403);
 
@@ -126,12 +113,7 @@ export async function login(req, res, next) {
 
     const { id: sessionId, expiraEn } = await crearSesion(usuario.id, req);
 
-    res.cookie(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      expires: expiraEn,
-    });
+    res.cookie(SESSION_COOKIE, sessionId, getCookieOptions(expiraEn));
 
     return ok(
       res,
@@ -145,12 +127,9 @@ export async function login(req, res, next) {
 
 /**
  * Cierra la sesion activa del usuario.
- * Elimina la sesion de la base de datos y limpia la cookie en el
- * cliente, dejandolo sin acceso a las rutas protegidas.
- * @param {object} req - Request de Express (requiere pasar por verificarSesion antes).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
- * @param {Function} next - Siguiente middleware (manejo de errores).
- * @returns {Promise<object>} Respuesta HTTP confirmando el cierre de sesion.
+ * @param {Function} next - Siguiente middleware.
  */
 export async function logout(req, res, next) {
   try {
@@ -160,7 +139,7 @@ export async function logout(req, res, next) {
       await destruirSesion(sid);
     }
 
-    res.clearCookie(SESSION_COOKIE);
+    res.clearCookie(SESSION_COOKIE, getCookieOptions());
 
     return ok(res, null, 'Sesion cerrada correctamente');
   } catch (err) {
@@ -169,22 +148,12 @@ export async function logout(req, res, next) {
 }
 
 /**
- * Solicita la recuperacion de contrasena. Genera un token temporal de
- * un solo uso y lo guarda en tokens_recuperacion. Por seguridad,
- * responde el mismo mensaje exista o no el usuario, para no revelar
- * si un correo/usuario esta registrado en el sistema.
- * @param {object} req - Request de Express (req.body.identificador: usuario o correo).
- * @param {object} res - Response de Express.
- * @param {Function} next - Siguiente middleware (manejo de errores).
- * @returns {Promise<object>} Respuesta HTTP generica de confirmacion.
+ * Solicita la recuperacion de contrasena.
  */
 export async function recuperarPassword(req, res, next) {
   try {
     const { identificador } = req.body;
-
     const usuario = await authModel.buscarPorIdentificador(identificador);
-
-    // No revelar si el usuario existe o no (mismo mensaje en ambos casos)
     const mensajeGenerico =
       'Si el usuario existe, se genero un enlace de recuperacion valido por ' +
       `${RECUPERACION_TOKEN_MIN} minutos`;
@@ -198,10 +167,7 @@ export async function recuperarPassword(req, res, next) {
 
     await authModel.crearTokenRecuperacion(usuario.id, token, expiraEn);
 
-    // NOTA: aqui se conectaria el envio real por correo (ej. Nodemailer).
-    // Mientras tanto, se devuelve el enlace en la respuesta para poder
-    // probar el flujo completo desde Postman/Thunder Client.
-    const enlace = `http://localhost:5173/restablecer-password?token=${token}`;
+    const enlace = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/restablecer-password?token=${token}`;
 
     return ok(res, { enlace }, mensajeGenerico);
   } catch (err) {
@@ -210,14 +176,7 @@ export async function recuperarPassword(req, res, next) {
 }
 
 /**
- * Restablece la contrasena usando un token de recuperacion valido.
- * El token debe existir, no estar usado y no haber expirado. Al
- * usarse correctamente, se marca como usado para que no pueda
- * reutilizarse (regla de "un solo uso" exigida por la guia).
- * @param {object} req - Request de Express (req.body: token, password_nueva, confirmar_password_nueva).
- * @param {object} res - Response de Express.
- * @param {Function} next - Siguiente middleware (manejo de errores).
- * @returns {Promise<object>} Respuesta HTTP confirmando el restablecimiento.
+ * Restablece la contrasena con token.
  */
 export async function restablecerPassword(req, res, next) {
   try {

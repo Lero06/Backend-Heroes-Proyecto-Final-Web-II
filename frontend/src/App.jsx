@@ -33,6 +33,7 @@ import Equipos from './pages/Equipos';
 import EquipoForm from './pages/EquipoForm';
 import Inicio from './pages/Inicio';
 import Marcas from './pages/Marcas';
+import Prestamos from './pages/Prestamos';
 
 /*
 //////////////////////////////////////////////////////////
@@ -70,7 +71,7 @@ export default function App() {
       <Route path="/equipos/nuevo" element={<RutaProtegida><EquipoForm /></RutaProtegida>} />
       <Route path="/equipos/:id/editar" element={<RutaProtegida><EquipoForm /></RutaProtegida>} />
       <Route path="/marcas" element={<RutaProtegida><Marcas /></RutaProtegida>} />
-      {/* <Route path="/prestamos" element={<RutaProtegida><Prestamos /></RutaProtegida>} /> */}
+      <Route path="/prestamos" element={<RutaProtegida><Prestamos /></RutaProtegida>} />
 
       {/* Redireccion de cualquier ruta inexistente a inicio */}
       <Route path="*" element={<Navigate to="/" replace />} />

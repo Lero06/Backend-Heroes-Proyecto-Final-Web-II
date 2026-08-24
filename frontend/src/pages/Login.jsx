@@ -69,32 +69,33 @@ export default function Login() {
   };
 
   return (
-    <div className="container d-flex flex-column justify-content-center align-items-center vh-100">
-      <div style={{ maxWidth: '420px', width: '100%' }}>
-
-        {/* Logo SIGMA — misma estética que el Navbar */}
+    <div
+      className="d-flex justify-content-center align-items-center vh-100"
+      style={{ backgroundColor: '#f0f2f5' }}
+    >
+      <div
+        className="card shadow-sm border-0 rounded-3 p-4 p-sm-5"
+        style={{ maxWidth: '440px', width: '90%', backgroundColor: '#ffffff' }}
+      >
+        {/* Logo SIGMA */}
         <div className="text-center mb-4">
           <div
-            className="d-inline-flex align-items-center justify-content-center bg-primary rounded-3 mb-3 px-5 py-2"
+            className="d-inline-flex align-items-center justify-content-center bg-primary rounded-3 mb-3 px-4 py-2 shadow-sm"
           >
-            <span className="fw-bold text-white" style={{ fontSize: '34px', letterSpacing: '3px' }}>
+            <span className="fw-bold text-white" style={{ fontSize: '32px', letterSpacing: '3px' }}>
               SIGMA
             </span>
           </div>
-          
-          <br></br>
-          <p className="h6 mb-1">Sistema de Gestion de Marcas y Equipos</p>
-          <br></br>
-          <p className="h6 mb-1">Ingrese sus credenciales de inicio de sesión</p>
+          <h2 className="h6 fw-bold mb-1 text-secondary">Sistema de Gestión de Marcas y Equipos</h2>
         </div>
 
         <form onSubmit={manejarSubmit}>
           <div className="mb-3">
-            <label className="form-label">Usuario o correo</label>
             <input
               type="text"
               name="identificador"
-              className="form-control"
+              className="form-control form-control-lg fs-6"
+              placeholder="Usuario o Correo"
               value={form.identificador}
               onChange={manejarCambio}
               required
@@ -102,27 +103,27 @@ export default function Login() {
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Contraseña</label>
             <input
               type="password"
               name="password"
-              className="form-control"
+              className="form-control form-control-lg fs-6"
+              placeholder="Contraseña"
               value={form.password}
               onChange={manejarCambio}
               required
             />
           </div>
 
-          {error && <div className="alert alert-danger py-2">{error}</div>}
+          {error && <div className="alert alert-danger py-2 small">{error}</div>}
 
-          <button type="submit" className="btn btn-primary w-100" disabled={enviando}>
+          <button type="submit" className="btn btn-primary btn-lg w-100 fs-6 fw-semibold py-2" disabled={enviando}>
             {enviando ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
 
-        <div className="d-flex justify-content-between mt-3">
-          <Link to="/registro">Crear cuenta</Link>
-          <Link to="/recuperar-password">Olvide mi contraseña</Link>
+        <div className="d-flex justify-content-between mt-4 small">
+          <Link to="/registro" className="text-decoration-none">Crear cuenta</Link>
+          <Link to="/recuperar-password" className="text-decoration-none">Olvidé mi contraseña</Link>
         </div>
       </div>
     </div>

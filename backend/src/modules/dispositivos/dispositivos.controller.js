@@ -7,10 +7,10 @@ Autor: Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Dispositivos Autorizados
 Descripcion:
-Logica de negocio para la gestion de dispositivos autorizados de los
-usuarios. Permite registrar un dispositivo, seleccionar que dispositivo
-usar en el navegador actual (asignando cookie HTTP-Only `dispositivo_id`),
-listar dispositivos, cambiar su estado (ACTIVO/INACTIVO) y eliminarlos.
+Logica de negocio para la gestion de dispositivos autorizados.
+Permite a usuarios normales gestionar sus propios dispositivos,
+y a Administradores visualizar, inactivar y eliminar dispositivos de
+cualquier usuario en el sistema.
 //////////////////////////////////////////////////////////
 */
 
@@ -42,8 +42,6 @@ FUNCIONES PRINCIPALES
 
 /**
  * Registra el dispositivo actual para el usuario autenticado.
- * Genera un identificador unico (UUID), guarda el registro en la base de datos
- * y establece una cookie HTTP-Only `dispositivo_id` en la respuesta.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
@@ -78,8 +76,7 @@ export async function registrarDispositivo(req, res, next) {
 }
 
 /**
- * Vincula un dispositivo previamente registrado al navegador actual
- * actualizando la cookie HTTP-Only `dispositivo_id`.
+ * Vincula un dispositivo previamente registrado del usuario al navegador actual.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
@@ -91,7 +88,7 @@ export async function seleccionarDispositivo(req, res, next) {
 
     const dispositivo = await dispositivosModel.obtenerDispositivoPorId(id);
     if (!dispositivo || dispositivo.usuario_id !== usuarioId) {
-      return error(res, 'Dispositivo no encontrado o no pertenece a este usuario', 404);
+      return error(res, 'Solo puede seleccionar dispositivos que pertenezcan a su propia cuenta', 403);
     }
 
     if (dispositivo.estado !== 'ACTIVO') {
@@ -131,10 +128,12 @@ export async function deseleccionarDispositivo(req, res, next) {
 export async function listarMisDispositivos(req, res, next) {
   try {
     const dispositivoActualId = req.cookies?.[DEVICE_COOKIE] || null;
-    const dispositivos = await dispositivosModel.obtenerDispositivosPorUsuario(
-      req.usuario.id,
-      dispositivoActualId
-    );
+    const esAdmin = req.usuario.rol === 'administrador';
+
+    const dispositivos = esAdmin
+      ? await dispositivosModel.obtenerTodosLosDispositivos(dispositivoActualId)
+      : await dispositivosModel.obtenerDispositivosPorUsuario(req.usuario.id, dispositivoActualId);
+
     return ok(res, dispositivos, 'Dispositivos obtenidos correctamente');
   } catch (err) {
     next(err);
@@ -143,6 +142,7 @@ export async function listarMisDispositivos(req, res, next) {
 
 /**
  * Cambia el estado (ACTIVO o INACTIVO) de un dispositivo.
+ * Administradores pueden cambiar el estado de cualquier dispositivo.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
@@ -152,13 +152,17 @@ export async function cambiarEstadoDispositivo(req, res, next) {
     const { id } = req.params;
     const { estado } = req.body;
     const usuarioId = req.usuario.id;
+    const esAdmin = req.usuario.rol === 'administrador';
 
-    const actualizado = await dispositivosModel.actualizarDispositivo(id, usuarioId, {
-      estado: estado.toUpperCase(),
-    });
+    const actualizado = await dispositivosModel.actualizarDispositivo(
+      id,
+      usuarioId,
+      { estado: estado.toUpperCase() },
+      esAdmin
+    );
 
     if (!actualizado) {
-      return error(res, 'Dispositivo no encontrado o no pertenece a este usuario', 404);
+      return error(res, 'Dispositivo no encontrado o sin permisos de modificacion', 404);
     }
 
     const dispositivoActualizado = await dispositivosModel.obtenerDispositivoPorId(id);
@@ -175,6 +179,7 @@ export async function cambiarEstadoDispositivo(req, res, next) {
 
 /**
  * Elimina un dispositivo autorizado.
+ * Administradores pueden eliminar cualquier dispositivo del sistema.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
@@ -183,11 +188,12 @@ export async function eliminarDispositivo(req, res, next) {
   try {
     const { id } = req.params;
     const usuarioId = req.usuario.id;
+    const esAdmin = req.usuario.rol === 'administrador';
 
-    const eliminado = await dispositivosModel.eliminarDispositivo(id, usuarioId);
+    const eliminado = await dispositivosModel.eliminarDispositivo(id, usuarioId, esAdmin);
 
     if (!eliminado) {
-      return error(res, 'Dispositivo no encontrado o no pertenece a este usuario', 404);
+      return error(res, 'Dispositivo no encontrado o sin permisos de eliminacion', 404);
     }
 
     if (req.cookies?.[DEVICE_COOKIE] === id) {

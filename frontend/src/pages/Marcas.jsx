@@ -10,8 +10,9 @@ Descripcion:
 Pantalla principal para el Modulo de Marcas y Dispositivos. Permite
 marcar entrada y salida con alternancia automatica, verificar el estado
 de asistencia en vivo, consultar la red IP, registrar el navegador como
-dispositivo autorizado, gestionar dispositivos y ver el historial con
-nombre de usuario y duracion laborada calculada.
+dispositivo autorizado, ver todos los dispositivos (si es admin) o los propios,
+inactivar/eliminar dispositivos y ver el historial con calculo de tiempo.
+Filas de tabla con altura de 1 sola linea uniforme sin saltos de texto.
 //////////////////////////////////////////////////////////
 */
 
@@ -36,6 +37,7 @@ import Tabla from '../components/Tabla.jsx';
 
 export default function Marcas() {
   const { usuario, logout } = useAuth();
+  const esAdmin = usuario?.rol === 'administrador';
 
   // Pestaña activa ('asistencia' o 'dispositivos')
   const [tabActiva, setTabActiva] = useState('asistencia');
@@ -125,7 +127,7 @@ export default function Marcas() {
     }
   };
 
-  // Seleccionar dispositivo para el navegador actual
+  // Seleccionar dispositivo para el navegador actual (Solo si pertenece al usuario)
   const handleSeleccionarDispositivo = async (id) => {
     const res = await seleccionarDispositivo(id);
     if (res.ok) {
@@ -312,22 +314,22 @@ export default function Marcas() {
                   ) : (
                     <Tabla
                       columnas={[
-                        'Usuario',
-                        'Fecha',
-                        'Hora',
-                        'Tipo de Marca',
-                        'Dispositivo',
-                        'Dirección IP',
-                        'Tiempo Laborado',
+                        { texto: 'Usuario', ancho: '20%' },
+                        { texto: 'Fecha', ancho: '12%' },
+                        { texto: 'Hora', ancho: '12%' },
+                        { texto: 'Tipo de Marca', ancho: '14%' },
+                        { texto: 'Dispositivo', ancho: '20%' },
+                        { texto: 'Dirección IP', ancho: '12%' },
+                        { texto: 'Tiempo Laborado', ancho: '10%' },
                       ]}
                     >
                       {historialMarcas.map((m) => {
                         const duracion = m.duracion_calculada || m.duracion_laborada;
                         return (
                           <tr key={m.id}>
-                            <td className="fw-bold align-middle">{m.usuario_nombre || usuario.nombre_completo}</td>
-                            <td className="text-center font-monospace align-middle">{String(m.fecha).slice(0, 10)}</td>
-                            <td className="text-center font-monospace fw-bold align-middle">{m.hora}</td>
+                            <td className="fw-bold align-middle text-nowrap">{m.usuario_nombre || usuario.nombre_completo}</td>
+                            <td className="text-center font-monospace align-middle text-nowrap">{String(m.fecha).slice(0, 10)}</td>
+                            <td className="text-center font-monospace fw-bold align-middle text-nowrap">{m.hora}</td>
                             <td className="text-center align-middle">
                               <span
                                 className={`badge ${
@@ -337,9 +339,9 @@ export default function Marcas() {
                                 {m.tipo}
                               </span>
                             </td>
-                            <td className="text-center align-middle">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
-                            <td className="text-center font-monospace small align-middle">{m.ip}</td>
-                            <td className="text-center fw-semibold text-success align-middle">
+                            <td className="text-center align-middle text-nowrap">{m.dispositivo_nombre || 'Dispositivo Registrado'}</td>
+                            <td className="text-center font-monospace small align-middle text-nowrap">{m.ip}</td>
+                            <td className="text-center fw-semibold text-success align-middle text-nowrap">
                               {duracion ? (
                                 <span>
                                   <i className="bi bi-hourglass-split me-1"></i>
@@ -422,66 +424,86 @@ export default function Marcas() {
               <Card
                 responsivo={true}
                 card_width="100%"
-                titulo="Dispositivos Autorizados Registrados"
+                titulo={esAdmin ? 'Todos los Dispositivos Registrados (Administración)' : 'Dispositivos Autorizados Registrados'}
                 texto_alineado="left"
                 chil_body={
                   dispositivos.length === 0 ? (
                     <p className="text-muted text-center py-3 mb-0">
-                      No tienes ningún dispositivo registrado aún. Utiliza el formulario adyacente para autorizar tu equipo.
+                      No hay ningún dispositivo registrado aún en el sistema.
                     </p>
                   ) : (
-                    <Tabla columnas={['Nombre', 'Descripción', 'Fecha Registro', 'Estado', 'Acciones']}>
-                      {dispositivos.map((d) => (
-                        <tr
-                          key={d.id}
-                          className={d.es_actual ? 'bg-light border-start border-4 border-primary' : ''}
-                        >
-                          <td className="fw-bold align-middle text-dark">
-                            {d.nombre}
-                            {d.es_actual && (
-                              <span className="badge bg-primary text-white ms-2 shadow-sm">
-                                <i className="bi bi-laptop me-1"></i> Este Navegador
-                              </span>
-                            )}
-                          </td>
-                          <td className="small text-muted align-middle">{d.descripcion || 'Sin descripción'}</td>
-                          <td className="small font-monospace align-middle text-dark">
-                            {new Date(d.fecha_registro).toLocaleDateString()}
-                          </td>
-                          <td className="text-center align-middle">
-                            <span className={`badge ${d.estado === 'ACTIVO' ? 'bg-success' : 'bg-danger'}`}>
-                              {d.estado}
-                            </span>
-                          </td>
-                          <td className="text-center align-middle">
-                            <div className="btn-group btn-group-sm" role="group">
-                              {!d.es_actual && d.estado === 'ACTIVO' && (
-                                <button
-                                  className="btn btn-outline-primary fw-semibold"
-                                  title="Usar en este navegador"
-                                  onClick={() => handleSeleccionarDispositivo(d.id)}
-                                >
-                                  <i className="bi bi-box-arrow-in-down me-1"></i> Seleccionar
-                                </button>
+                    <Tabla
+                      columnas={[
+                        { texto: 'Propietario', ancho: '22%' },
+                        { texto: 'Nombre', ancho: '23%' },
+                        { texto: 'Descripción', ancho: '25%' },
+                        { texto: 'Fecha Registro', ancho: '12%' },
+                        { texto: 'Estado', ancho: '8%' },
+                        { texto: 'Acciones', ancho: '10%' },
+                      ]}
+                    >
+                      {dispositivos.map((d) => {
+                        const esMiDispositivo = d.usuario_id === usuario.id;
+                        return (
+                          <tr
+                            key={d.id}
+                            className={d.es_actual ? 'bg-light border-start border-4 border-primary' : ''}
+                          >
+                            <td className="fw-bold align-middle text-nowrap">{d.propietario || usuario.nombre_completo}</td>
+                            <td className="fw-semibold align-middle text-dark text-nowrap">
+                              <span>{d.nombre}</span>
+                              {d.es_actual && (
+                                <span className="badge bg-primary text-white ms-2 shadow-sm d-inline-block">
+                                  <i className="bi bi-laptop me-1"></i> Este Navegador
+                                </span>
                               )}
-                              <button
-                                className={`btn btn-${d.estado === 'ACTIVO' ? 'warning text-dark' : 'success'}`}
-                                title={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
-                                onClick={() => toggleEstadoDispositivo(d.id, d.estado)}
-                              >
-                                {d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
-                              </button>
-                              <button
-                                className="btn btn-danger"
-                                title="Eliminar"
-                                onClick={() => handleEliminarDispositivo(d.id)}
-                              >
-                                <i className="bi bi-trash"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td
+                              className="small text-muted align-middle text-nowrap text-truncate"
+                              style={{ maxWidth: '160px' }}
+                              title={d.descripcion || 'Sin descripción'}
+                            >
+                              {d.descripcion || 'Sin descripción'}
+                            </td>
+                            <td className="small font-monospace align-middle text-dark text-nowrap">
+                              {new Date(d.fecha_registro).toLocaleDateString()}
+                            </td>
+                            <td className="text-center align-middle">
+                              <span className={`badge ${d.estado === 'ACTIVO' ? 'bg-success' : 'bg-danger'}`}>
+                                {d.estado}
+                              </span>
+                            </td>
+                            <td className="text-center align-middle">
+                              <div className="btn-group btn-group-sm text-nowrap d-inline-flex align-items-center" role="group">
+                                {/* Solo se permite 'Seleccionar / Usar' si el dispositivo pertenece al usuario autenticado */}
+                                {!d.es_actual && d.estado === 'ACTIVO' && esMiDispositivo && (
+                                  <button
+                                    className="btn btn-outline-primary fw-semibold px-2 py-1 text-nowrap"
+                                    title="Usar en este navegador"
+                                    onClick={() => handleSeleccionarDispositivo(d.id)}
+                                  >
+                                    <i className="bi bi-box-arrow-in-down me-1"></i> Seleccionar
+                                  </button>
+                                )}
+                                <button
+                                  className={`btn btn-${d.estado === 'ACTIVO' ? 'warning text-dark' : 'success'} px-2 py-1 text-nowrap`}
+                                  title={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                                  onClick={() => toggleEstadoDispositivo(d.id, d.estado)}
+                                >
+                                  {d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                                </button>
+                                <button
+                                  className="btn btn-danger px-2 py-1"
+                                  title="Eliminar"
+                                  onClick={() => handleEliminarDispositivo(d.id)}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </Tabla>
                   )
                 }

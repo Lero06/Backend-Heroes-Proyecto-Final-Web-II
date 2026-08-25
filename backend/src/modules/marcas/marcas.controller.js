@@ -21,7 +21,7 @@ IMPORTS
 */
 
 import { ok, error } from '../../utils/response.js';
-import { normalizarIp, esIpPermitida } from '../../utils/ip.util.js';
+import { extraerIpCliente, esIpPermitida } from '../../utils/ip.util.js';
 import * as marcasModel from './marcas.model.js';
 import * as dispositivosModel from '../dispositivos/dispositivos.model.js';
 
@@ -39,11 +39,6 @@ FUNCIONES AUXILIARES DE TIEMPO
 //////////////////////////////////////////////////////////
 */
 
-/**
- * Formatea una fecha en formato YYYY-MM-DD local.
- * @param {Date} date - Objeto fecha.
- * @returns {string} Fecha en texto YYYY-MM-DD.
- */
 function obtenerFechaActualTexto(date = new Date()) {
   const anio = date.getFullYear();
   const mes = String(date.getMonth() + 1).padStart(2, '0');
@@ -51,11 +46,6 @@ function obtenerFechaActualTexto(date = new Date()) {
   return `${anio}-${mes}-${dia}`;
 }
 
-/**
- * Formatea una hora en formato HH:MM:SS local.
- * @param {Date} date - Objeto fecha.
- * @returns {string} Hora en texto HH:MM:SS.
- */
 function obtenerHoraActualTexto(date = new Date()) {
   const horas = String(date.getHours()).padStart(2, '0');
   const minutos = String(date.getMinutes()).padStart(2, '0');
@@ -63,12 +53,6 @@ function obtenerHoraActualTexto(date = new Date()) {
   return `${horas}:${minutos}:${segundos}`;
 }
 
-/**
- * Calcula la duracion transcurrida entre una hora de entrada y salida (formatos HH:MM:SS).
- * @param {string} horaEntrada - Ej. "08:00:00"
- * @param {string} horaSalida - Ej. "16:30:00"
- * @returns {string} Texto formateado con la duracion (ej. "8 horas 30 minutos").
- */
 function calcularDuracionTexto(horaEntrada, horaSalida) {
   if (!horaEntrada || !horaSalida) return null;
 
@@ -79,7 +63,7 @@ function calcularDuracionTexto(horaEntrada, horaSalida) {
   const seg2 = h2 * 3600 + m2 * 60 + (s2 || 0);
 
   let diferencia = seg2 - seg1;
-  if (diferencia < 0) diferencia += 24 * 3600; // En caso de cambio de dia
+  if (diferencia < 0) diferencia += 24 * 3600;
 
   const horas = Math.floor(diferencia / 3600);
   const minutos = Math.floor((diferencia % 3600) / 60);
@@ -100,16 +84,15 @@ FUNCIONES PRINCIPALES
  * Registra una marca de asistencia (ENTRADA o SALIDA) para el usuario autenticado.
  * - Comprueba la IP del cliente contra la tabla `configuracion`.
  * - Comprueba que el dispositivo este registrado a su nombre y este ACTIVO.
- * - Alterna automaticamente el tipo (si la ultima marca fue ENTRADA, la nueva sera SALIDA; de lo contrario ENTRADA).
- * @param {object} req - Request de Express (req.usuario.id, req.ip, req.cookies).
+ * - Alterna automaticamente el tipo de marca.
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
 export async function marcar(req, res, next) {
   try {
     const usuarioId = req.usuario.id;
-    const ipClienteRaw = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const ipCliente = normalizarIp(ipClienteRaw);
+    const ipCliente = extraerIpCliente(req);
 
     // 1. Validacion de ubicacion de red (Rango de IP permitido)
     const rangoIpPermitido = await marcasModel.obtenerRangoIpPermitido();
@@ -172,7 +155,6 @@ export async function marcar(req, res, next) {
 
     const marcaRegistrada = await marcasModel.obtenerMarcaPorId(marcaId);
 
-    // Si la marca es SALIDA, calculamos el tiempo laborado con respecto a la ENTRADA anterior
     let duracionCalculada = null;
     if (nuevoTipo === 'SALIDA' && ultimaMarca) {
       duracionCalculada = calcularDuracionTexto(ultimaMarca.hora, hora);
@@ -199,7 +181,7 @@ export async function marcar(req, res, next) {
 
 /**
  * Obtiene el estado actual del usuario (ultima marca, estado DENTRO/FUERA e IP).
- * @param {object} req - Request de Express (req.usuario.id).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -207,8 +189,7 @@ export async function obtenerEstadoActual(req, res, next) {
   try {
     const usuarioId = req.usuario.id;
     const ultimaMarca = await marcasModel.obtenerUltimaMarcaPorUsuario(usuarioId);
-    const ipClienteRaw = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const ipCliente = normalizarIp(ipClienteRaw);
+    const ipCliente = extraerIpCliente(req);
     const rangoIpPermitido = await marcasModel.obtenerRangoIpPermitido();
     const ipValida = esIpPermitida(ipCliente, rangoIpPermitido);
 
@@ -227,8 +208,8 @@ export async function obtenerEstadoActual(req, res, next) {
 }
 
 /**
- * Consulta el historial de marcas del usuario autenticado con calculo de duracion entre entradas y salidas.
- * @param {object} req - Request de Express (req.usuario.id).
+ * Consulta el historial de marcas del usuario autenticado.
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -236,7 +217,6 @@ export async function listarMisMarcas(req, res, next) {
   try {
     const marcas = await marcasModel.obtenerMarcasPorUsuario(req.usuario.id);
 
-    // Procesar marcas para calcular duraciones en parejas ENTRADA -> SALIDA
     const marcasConDuracion = [];
     for (let i = 0; i < marcas.length; i++) {
       const marca = { ...marcas[i] };

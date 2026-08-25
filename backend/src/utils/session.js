@@ -8,8 +8,7 @@ Fecha: 22/08/2026
 Modulo: Autenticacion / Sesiones
 Descripcion:
 Manejo de sesiones respaldado en la tabla `sesiones` de MySQL y
-configuracion universal de opciones de cookies para entorno de
-desarrollo local y despliegues entre dominios (Vercel <-> Railway).
+configuracion infalible de opciones de cookies con maxAge para localhost y produccion.
 //////////////////////////////////////////////////////////
 */
 
@@ -38,23 +37,40 @@ UTILIDAD DE OPCIONES DE COOKIE
 */
 
 /**
- * Genera las opciones de cookie compatibles con cross-site (Vercel <-> Railway).
- * En produccion requiere `sameSite: 'none'` y `secure: true`.
+ * Genera las opciones de cookie infalibles:
+ * - maxAge garantizado en milisegundos (evita problemas de reloj/zona horaria).
+ * - En produccion (HTTPS Vercel/Railway): secure: true, sameSite: 'none'
+ * - En desarrollo local (localhost / Wi-Fi LAN): secure: false
  * @param {Date|null} [expiraEn] - Fecha de expiracion opcional.
  * @param {number|null} [maxAgeMs] - Tiempo maximo de vida en ms opcional.
  * @returns {object} Objeto de configuracion para res.cookie.
  */
 export function getCookieOptions(expiraEn = null, maxAgeMs = null) {
-  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.RAILWAY_ENVIRONMENT) || Boolean(process.env.PORT);
+  const isProd =
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.RAILWAY_ENVIRONMENT);
 
   const options = {
+    path: '/',
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
   };
 
-  if (expiraEn) options.expires = expiraEn;
-  if (maxAgeMs) options.maxAge = maxAgeMs;
+  if (isProd) {
+    options.secure = true;
+    options.sameSite = 'none';
+  } else {
+    options.secure = false;
+  }
+
+  // maxAge en milisegundos es inmune a desajustes de zona horaria o reloj del sistema
+  if (maxAgeMs) {
+    options.maxAge = maxAgeMs;
+  } else if (expiraEn) {
+    options.expires = expiraEn;
+    options.maxAge = DEFAULT_MAX_AGE_MIN * 60 * 1000;
+  } else {
+    options.maxAge = DEFAULT_MAX_AGE_MIN * 60 * 1000;
+  }
 
   return options;
 }
@@ -66,11 +82,10 @@ FUNCIONES PRINCIPALES
 */
 
 /**
- * Crea una nueva sesion para un usuario autenticado y la guarda en la
- * tabla `sesiones`.
+ * Crea una nueva sesion para un usuario autenticado y la guarda en la tabla `sesiones`.
  * @param {number} usuarioId - Id del usuario que inicio sesion.
- * @param {object} req - Objeto request de Express (se usa para IP y user-agent).
- * @returns {Promise<{id: string, expiraEn: Date}>} Id de la sesion creada y su fecha de expiracion.
+ * @param {object} req - Objeto request de Express.
+ * @returns {Promise<{id: string, expiraEn: Date}>} Id de la sesion creada y expiracion.
  */
 export async function crearSesion(usuarioId, req) {
   const id = uuidv4();
@@ -86,9 +101,8 @@ export async function crearSesion(usuarioId, req) {
 
 /**
  * Busca una sesion por su id y valida que no haya expirado.
- * Si la sesion esta expirada, la elimina automaticamente y retorna null.
- * @param {string} id - Id de la sesion (valor de la cookie `sid`).
- * @returns {Promise<object|null>} Datos de la sesion junto con el usuario y su rol, o null si no es valida.
+ * @param {string} id - Id de la sesion.
+ * @returns {Promise<object|null>} Datos de la sesion o null.
  */
 export async function obtenerSesion(id) {
   const [rows] = await pool.query(
@@ -113,7 +127,7 @@ export async function obtenerSesion(id) {
 }
 
 /**
- * Elimina una sesion de la base de datos (usado en logout o cuando expira).
+ * Elimina una sesion de la base de datos.
  * @param {string} id - Id de la sesion a destruir.
  * @returns {Promise<void>}
  */

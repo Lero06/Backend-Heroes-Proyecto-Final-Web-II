@@ -25,6 +25,8 @@ dotenv.config();
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import manejadorErrores from './middlewares/error.middleware.js';
 
@@ -43,6 +45,9 @@ import configuracionRoutes from './modules/configuracion/configuracion.routes.js
 CONFIGURACION DE LA APP Y PROXY
 //////////////////////////////////////////////////////////
 */
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -83,6 +88,13 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
+
+// ============================================================
+// MIDDLEWARE PARA SERVIR ARCHIVOS ESTÁTICOS (IMÁGENES DE EQUIPOS)
+// ============================================================
+// Exponer la carpeta 'uploads' en la ruta '/uploads' para que las imágenes
+// sean accesibles desde el frontend.
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 /*
 //////////////////////////////////////////////////////////

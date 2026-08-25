@@ -3,12 +3,13 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: session.js
-Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez
-Fecha: 22/08/2026
+Autor: Leandro Sanchez Rojas / Adaptado a ESM por Marco Vásquez / Actualizado por Jose Rodolfo Chaves Herrera
+Fecha: 25/08/2026
 Modulo: Autenticacion / Sesiones
 Descripcion:
 Manejo de sesiones respaldado en la tabla `sesiones` de MySQL y
-configuracion infalible de opciones de cookies con maxAge para localhost y produccion.
+configuracion dinamica de expiracion segun la tabla `configuracion`
+(clave `tiempo_max_sesion_min`).
 //////////////////////////////////////////////////////////
 */
 
@@ -29,6 +30,31 @@ CONSTANTES
 
 export const SESSION_COOKIE = 'sid';
 export const DEFAULT_MAX_AGE_MIN = Number(process.env.SESSION_MAX_AGE_MIN || 120);
+
+/*
+//////////////////////////////////////////////////////////
+FUNCIONES DE CONFIGURACION DINAMICA
+//////////////////////////////////////////////////////////
+*/
+
+/**
+ * Obtiene el tiempo maximo de sesion en minutos configurado en la base de datos.
+ * @returns {Promise<number>} Tiempo en minutos.
+ */
+export async function obtenerTiempoMaxSesionMin() {
+  try {
+    const [rows] = await pool.query(
+      "SELECT valor FROM configuracion WHERE clave = 'tiempo_max_sesion_min'"
+    );
+    if (rows.length > 0 && rows[0].valor) {
+      const val = Number(rows[0].valor);
+      if (!isNaN(val) && val > 0) return val;
+    }
+  } catch (err) {
+    // Si falla la consulta, recurrir a variable de entorno o default
+  }
+  return DEFAULT_MAX_AGE_MIN;
+}
 
 /*
 //////////////////////////////////////////////////////////
@@ -65,9 +91,10 @@ export function getCookieOptions(expiraEn = null, maxAgeMs = null) {
   // maxAge en milisegundos es inmune a desajustes de zona horaria o reloj del sistema
   if (maxAgeMs) {
     options.maxAge = maxAgeMs;
-  } else if (expiraEn) {
+  } else if (expiraEn instanceof Date) {
+    const msRestantes = expiraEn.getTime() - Date.now();
     options.expires = expiraEn;
-    options.maxAge = DEFAULT_MAX_AGE_MIN * 60 * 1000;
+    options.maxAge = msRestantes > 0 ? msRestantes : DEFAULT_MAX_AGE_MIN * 60 * 1000;
   } else {
     options.maxAge = DEFAULT_MAX_AGE_MIN * 60 * 1000;
   }
@@ -83,13 +110,15 @@ FUNCIONES PRINCIPALES
 
 /**
  * Crea una nueva sesion para un usuario autenticado y la guarda en la tabla `sesiones`.
+ * La duracion se toma dinamicamente de la tabla `configuracion`.
  * @param {number} usuarioId - Id del usuario que inicio sesion.
  * @param {object} req - Objeto request de Express.
  * @returns {Promise<{id: string, expiraEn: Date}>} Id de la sesion creada y expiracion.
  */
 export async function crearSesion(usuarioId, req) {
   const id = uuidv4();
-  const expiraEn = new Date(Date.now() + DEFAULT_MAX_AGE_MIN * 60 * 1000);
+  const maxAgeMin = await obtenerTiempoMaxSesionMin();
+  const expiraEn = new Date(Date.now() + maxAgeMin * 60 * 1000);
 
   await pool.query(
     'INSERT INTO sesiones (id, usuario_id, ip, user_agent, expira_en) VALUES (?, ?, ?, ?, ?)',

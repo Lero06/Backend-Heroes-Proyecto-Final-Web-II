@@ -12,11 +12,10 @@ puerto dinamico asignado por Railway/Render (process.env.PORT) y en 0.0.0.0.
 //////////////////////////////////////////////////////////
 */
 
+import 'dotenv/config';
+
 // Capturar el puerto de Railway antes de cargar variables locales de .env
 const PORT_RAILWAY = process.env.PORT;
-
-import dotenv from 'dotenv';
-dotenv.config();
 
 import app from './app.js';
 import pool from './config/db.js';

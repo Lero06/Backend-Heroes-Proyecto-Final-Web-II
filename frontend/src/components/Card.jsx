@@ -11,6 +11,8 @@ export default function Card({
     card_width = "18rem",
     responsivo = false,
     texto_alineado = "left",
+    className = "",
+    style = {},
 
     chil_top,
     chil_body,
@@ -58,8 +60,8 @@ export default function Card({
 
     return (
         <div
-            className={`card ${color_text} ${alineacion_card} ${alineado_text} shadow rounded ${card_responsive}`.trim()}
-            style={{ width: card_width, ...(color_background ? { backgroundColor: color_background } : {}) }}
+            className={`card ${color_text} ${alineacion_card} ${alineado_text} shadow rounded ${card_responsive} ${className}`.trim()}
+            style={{ width: card_width, ...(color_background ? { backgroundColor: color_background } : {}), ...style }}
         >
             {titulo ? (
                 <div className="card-header fw-semibold">
@@ -73,7 +75,7 @@ export default function Card({
 
             {chil_top}
 
-            <div className="card-body">
+            <div className={`card-body ${className.includes('h-100') ? 'd-flex flex-column flex-grow-1' : ''}`.trim()}>
                 {chil_body}
             </div>
 

@@ -107,7 +107,7 @@ export async function crearSesion(usuarioId, req) {
 export async function obtenerSesion(id) {
   const [rows] = await pool.query(
     `SELECT s.id, s.usuario_id, s.expira_en,
-            u.usuario, u.correo, u.rol_id, r.nombre AS rol
+            u.nombre_completo, u.usuario, u.correo, u.rol_id, r.nombre AS rol
      FROM sesiones s
      JOIN usuarios u ON u.id = s.usuario_id
      JOIN roles r ON r.id = u.rol_id

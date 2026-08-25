@@ -24,6 +24,7 @@ IMPORTS
 
 import { ok, error } from '../../utils/response.js';
 import * as reportesModel from './reportes.model.js';
+import * as configuracionModel from '../configuracion/configuracion.model.js';
 import { create } from 'xmlbuilder2';
 import PDFDocument from 'pdfkit';
 
@@ -37,17 +38,23 @@ FUNCION AUXILIAR PRIVADA
  * Lee y castea los query params de filtro a sus tipos correctos.
  * Los valores ausentes quedan como undefined (el model los ignora).
  * @param {object} req - Request de Express.
- * @returns {{ usuarioId: number|undefined, anio: number|undefined, mes: number|undefined, dia: number|undefined, departamentoId: number|undefined }}
+ * @returns {object} Filtros procesados.
  */
 function leerFiltros(req) {
-  const { usuario, anio, mes, dia, departamento } = req.query;
+  const { usuario, anio, mes, dia, departamento, ids } = req.query;
+
+  // ids viene como string CSV "1,2,3" desde el frontend
+  const idsArray = ids
+    ? ids.split(',').map(Number).filter((n) => !isNaN(n) && n > 0)
+    : undefined;
 
   return {
-    usuarioId:      usuario     ? Number(usuario)     : undefined,
-    anio:           anio        ? Number(anio)        : undefined,
-    mes:            mes         ? Number(mes)         : undefined,
-    dia:            dia         ? Number(dia)         : undefined,
+    usuarioId:      usuario      ? Number(usuario)      : undefined,
+    anio:           anio         ? Number(anio)         : undefined,
+    mes:            mes          ? Number(mes)          : undefined,
+    dia:            dia          ? Number(dia)          : undefined,
     departamentoId: departamento ? Number(departamento) : undefined,
+    ids:            idsArray,
   };
 }
 
@@ -89,9 +96,22 @@ export async function exportarJSON(req, res, next) {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
 
+    const configInst = await configuracionModel.obtenerPorClave('nombre_institucion');
+    const nombreEmpresa = configInst?.valor || 'Universidad Técnica Nacional';
+    const nombreUsuario = req.usuario?.nombre_completo || req.usuario?.usuario || 'Usuario';
+    const correoUsuario = req.usuario?.correo ? ` (${req.usuario.correo})` : '';
+
+    const respuestaJSON = {
+      empresa: nombreEmpresa,
+      generado_por: `${nombreUsuario}${correoUsuario}`,
+      fecha_generacion: new Date().toISOString(),
+      total_registros: filas.length,
+      registros: filas,
+    };
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="reporte-marcas.json"');
-    return res.json(filas);
+    return res.json(respuestaJSON);
   } catch (err) {
     next(err);
   }
@@ -110,20 +130,30 @@ export async function exportarXML(req, res, next) {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
 
+    const configInst = await configuracionModel.obtenerPorClave('nombre_institucion');
+    const nombreEmpresa = configInst?.valor || 'Universidad Técnica Nacional';
+    const nombreUsuario = req.usuario?.nombre_completo || req.usuario?.usuario || 'Usuario';
+    const correoUsuario = req.usuario?.correo ? ` (${req.usuario.correo})` : '';
+
     // Construye el arbol XML con xmlbuilder2
     const raiz = create({ version: '1.0', encoding: 'UTF-8' })
-      .ele('reporteMarcas', { generado_en: new Date().toISOString() });
+      .ele('reporteMarcas', {
+        empresa: nombreEmpresa,
+        generado_por: `${nombreUsuario}${correoUsuario}`,
+        generado_en: new Date().toISOString(),
+        total_registros: String(filas.length),
+      });
 
     for (const fila of filas) {
       raiz.ele('marca')
+        .ele('id').txt(String(fila.id ?? '')).up()
         .ele('usuario_id').txt(String(fila.usuario_id ?? '')).up()
         .ele('nombre_completo').txt(fila.nombre_completo ?? '').up()
         .ele('departamento').txt(fila.departamento ?? '').up()
         .ele('fecha').txt(fila.fecha ? String(fila.fecha).slice(0, 10) : '').up()
-        .ele('hora_entrada').txt(fila.hora_entrada ?? '').up()
-        .ele('hora_salida').txt(fila.hora_salida ?? '').up()
-        .ele('dispositivo_entrada').txt(fila.dispositivo_entrada ?? '').up()
-        .ele('dispositivo_salida').txt(fila.dispositivo_salida ?? '').up()
+        .ele('hora').txt(fila.hora ?? '').up()
+        .ele('tipo').txt(fila.tipo ?? '').up()
+        .ele('dispositivo').txt(fila.dispositivo_nombre ?? '').up()
         .ele('ip').txt(fila.ip ?? '').up()
       .up();
     }
@@ -152,6 +182,12 @@ export async function exportarPDF(req, res, next) {
     const filtros = leerFiltros(req);
     const filas   = await reportesModel.obtenerMarcasFiltradas(filtros);
 
+    const configInst = await configuracionModel.obtenerPorClave('nombre_institucion');
+    const nombreEmpresa = configInst?.valor || 'Universidad Técnica Nacional';
+    const nombreUsuario = req.usuario?.nombre_completo || req.usuario?.usuario || 'Usuario';
+    const correoUsuario = req.usuario?.correo ? ` (${req.usuario.correo})` : '';
+    const generadoPor = `${nombreUsuario}${correoUsuario}`;
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="reporte-marcas.pdf"');
 
@@ -159,12 +195,15 @@ export async function exportarPDF(req, res, next) {
     doc.pipe(res);
 
     // ----- Encabezado del documento -----
-    doc.fontSize(18).font('Helvetica-Bold').text('Reporte de Marcas', { align: 'center' });
-    doc.fontSize(10).font('Helvetica').text(
-      `Generado el: ${new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' })}`,
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('blue').text(nombreEmpresa, { align: 'center' });
+    doc.fontSize(13).font('Helvetica-Bold').fillColor('black').text('Reporte de Marcas y Asistencia', { align: 'center' });
+    doc.moveDown(0.4);
+
+    doc.fontSize(9).font('Helvetica').fillColor('black').text(
+      `Generado por: ${generadoPor} | Fecha de emisión: ${new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' })}`,
       { align: 'center' }
     );
-    doc.moveDown(1.5);
+    doc.moveDown(1.2);
 
     if (filas.length === 0) {
       doc.fontSize(12).text('No se encontraron registros con los filtros aplicados.', { align: 'center' });
@@ -175,14 +214,13 @@ export async function exportarPDF(req, res, next) {
     // ----- Cabecera de la tabla -----
     // Ancho total utilizable en A4 landscape con margin 40: ~752px (595*1.41 - 80)
     const COLS = {
-      nombre:   { x: 40,  width: 140 },
-      depto:    { x: 180, width: 100 },
-      fecha:    { x: 280, width: 70  },
-      entrada:  { x: 350, width: 60  },
-      salida:   { x: 410, width: 60  },
-      d_ent:    { x: 470, width: 110 },
-      d_sal:    { x: 580, width: 110 },
-      ip:       { x: 690, width: 105 },
+      nombre:      { x: 40,  width: 150 },
+      depto:       { x: 190, width: 100 },
+      fecha:       { x: 290, width: 75  },
+      hora:        { x: 365, width: 65  },
+      tipo:        { x: 430, width: 65  },
+      dispositivo: { x: 495, width: 130 },
+      ip:          { x: 625, width: 155 },
     };
 
     const ROW_H = 18;
@@ -214,14 +252,13 @@ export async function exportarPDF(req, res, next) {
 
     // Encabezado de la tabla
     dibujarFila({
-      nombre:  'Usuario',
-      depto:   'Departamento',
-      fecha:   'Fecha',
-      entrada: 'H. Entrada',
-      salida:  'H. Salida',
-      d_ent:   'Disp. Entrada',
-      d_sal:   'Disp. Salida',
-      ip:      'IP',
+      nombre:      'Usuario',
+      depto:       'Departamento',
+      fecha:       'Fecha',
+      hora:        'Hora',
+      tipo:        'Tipo',
+      dispositivo: 'Dispositivo',
+      ip:          'IP',
     }, true);
 
     // Filas de datos
@@ -230,26 +267,24 @@ export async function exportarPDF(req, res, next) {
       if (doc.y + ROW_H > PAGE_BOTTOM) {
         doc.addPage();
         dibujarFila({
-          nombre:  'Usuario',
-          depto:   'Departamento',
-          fecha:   'Fecha',
-          entrada: 'H. Entrada',
-          salida:  'H. Salida',
-          d_ent:   'Disp. Entrada',
-          d_sal:   'Disp. Salida',
-          ip:      'IP',
+          nombre:      'Usuario',
+          depto:       'Departamento',
+          fecha:       'Fecha',
+          hora:        'Hora',
+          tipo:        'Tipo',
+          dispositivo: 'Dispositivo',
+          ip:          'IP',
         }, true);
       }
 
       dibujarFila({
-        nombre:  fila.nombre_completo ?? '',
-        depto:   fila.departamento ?? '',
-        fecha:   fila.fecha ? String(fila.fecha).slice(0, 10) : '',
-        entrada: fila.hora_entrada ?? '-',
-        salida:  fila.hora_salida  ?? '-',
-        d_ent:   fila.dispositivo_entrada ?? '-',
-        d_sal:   fila.dispositivo_salida  ?? '-',
-        ip:      fila.ip ?? '',
+        nombre:      fila.nombre_completo ?? '',
+        depto:       fila.departamento ?? '',
+        fecha:       fila.fecha ? String(fila.fecha).slice(0, 10) : '',
+        hora:        fila.hora ?? '-',
+        tipo:        fila.tipo ?? '-',
+        dispositivo: fila.dispositivo_nombre ?? '-',
+        ip:          fila.ip ?? '',
       });
     }
 

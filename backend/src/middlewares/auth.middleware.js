@@ -49,6 +49,7 @@ export async function verificarSesion(req, res, next) {
 
     req.usuario = {
       id: sesion.usuario_id,
+      nombre_completo: sesion.nombre_completo,
       usuario: sesion.usuario,
       correo: sesion.correo,
       rolId: sesion.rol_id,

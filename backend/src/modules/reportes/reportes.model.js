@@ -9,9 +9,9 @@ Modulo: Reportes / Filtros / Exportacion
 Descripcion:
 Acceso a datos del modulo de reportes de marcas. Provee una unica
 funcion que consulta la tabla `marcas` con JOINs a usuarios y
-departamentos, agrupa los registros por usuario y fecha para obtener
-hora de entrada y hora de salida en una sola fila, y aplica filtros
-dinamicos parametrizados (usuarioId, anio, mes, dia, departamentoId).
+departamentos, retornando una fila por cada registro individual de marca
+(sin agrupacion). Aplica filtros dinamicos parametrizados
+(usuarioId, anio, mes, dia, departamentoId, soloPropio).
 Nunca se concatenan variables directamente en el SQL; todos los
 valores se pasan como placeholders ? para prevenir inyeccion SQL.
 //////////////////////////////////////////////////////////
@@ -32,25 +32,35 @@ FUNCIONES DE ACCESO A DATOS
 */
 
 /**
- * Obtiene las marcas agrupadas por usuario y fecha, calculando hora de
- * entrada (MIN ENTRADA) y hora de salida (MAX SALIDA) en la misma fila.
+ * Obtiene las marcas individuales (una fila por cada registro en la tabla marcas)
+ * con JOINs a usuarios, departamentos y dispositivos.
  * Todos los filtros son opcionales y se combinan dinamicamente con AND.
  *
  * Columnas devueltas por fila:
- *   - hora_entrada, hora_salida   (agregacion condicional por tipo)
- *   - dispositivo_entrada          (dispositivo usado en la marca ENTRADA)
- *   - dispositivo_salida           (dispositivo usado en la marca SALIDA)
- *   - ip                           (IP de entrada; si no hay, cualquier IP del dia)
+ *   - id                           (id de la marca)
+ *   - usuario_id, nombre_completo  (datos del usuario)
+ *   - departamento                 (nombre del departamento o null)
+ *   - fecha, hora, tipo            (fecha/hora y tipo ENTRADA o SALIDA)
+ *   - dispositivo_nombre           (nombre del dispositivo o null)
+ *   - ip                           (IP del cliente al marcar)
  *
  * @param {object} filtros - Objeto de filtros opcionales.
- * @param {number} [filtros.usuarioId]      - Filtra por id de usuario.
- * @param {number} [filtros.anio]           - Filtra por año de la marca (YEAR(fecha)).
- * @param {number} [filtros.mes]            - Filtra por mes de la marca (MONTH(fecha)).
- * @param {number} [filtros.dia]            - Filtra por dia de la marca (DAY(fecha)).
- * @param {number} [filtros.departamentoId] - Filtra por id de departamento del usuario.
- * @returns {Promise<Array<object>>} Lista de filas agrupadas con los campos del reporte.
+ * @param {number} [filtros.usuarioId]        - Filtra por id de usuario.
+ * @param {number} [filtros.anio]             - Filtra por anio de la marca (YEAR(fecha)).
+ * @param {number} [filtros.mes]              - Filtra por mes de la marca (MONTH(fecha)).
+ * @param {number} [filtros.dia]              - Filtra por dia de la marca (DAY(fecha)).
+ * @param {number} [filtros.departamentoId]   - Filtra por id de departamento del usuario.
+ * @param {Array<number>} [filtros.ids]       - Filtra por IDs especificos de marcas.
+ * @returns {Promise<Array<object>>} Lista de marcas individuales con los campos del reporte.
  */
-export async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, departamentoId } = {}) {
+export async function obtenerMarcasFiltradas({
+  usuarioId,
+  anio,
+  mes,
+  dia,
+  departamentoId,
+  ids,
+} = {}) {
   // Clausulas WHERE dinamicas y valores parametrizados
   const condiciones = [];
   const valores = [];
@@ -80,35 +90,34 @@ export async function obtenerMarcasFiltradas({ usuarioId, anio, mes, dia, depart
     valores.push(departamentoId);
   }
 
+  // Filtrar por IDs especificos (para exportar marcas seleccionadas)
+  if (ids && ids.length > 0) {
+    condiciones.push(`m.id IN (${ids.map(() => '?').join(',')})`);
+    valores.push(...ids);
+  }
+
   const clausulaWhere =
     condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
 
-  // LEFT JOIN dispositivos: un usuario puede no tener dispositivo registrado.
-  // Un unico JOIN a dispositivos es suficiente porque dispositivo_id vive en
-  // la misma fila de marcas que m.tipo; el CASE filtra por tipo igual que
-  // se hace con hora_entrada/hora_salida.
-  // COALESCE en ip: si no hubo marca de ENTRADA ese dia, usa cualquier IP.
+  // Query plana: una fila por cada registro individual en la tabla marcas.
+  // No se agrupa por fecha; se muestran todas las marcas del dia tal como fueron registradas.
   const sql = `
     SELECT
-      u.id                                                           AS usuario_id,
+      m.id,
+      u.id               AS usuario_id,
       u.nombre_completo,
-      d.nombre                                                       AS departamento,
+      d.nombre           AS departamento,
       m.fecha,
-      MIN(CASE WHEN m.tipo = 'ENTRADA' THEN m.hora END)             AS hora_entrada,
-      MAX(CASE WHEN m.tipo = 'SALIDA'  THEN m.hora END)             AS hora_salida,
-      MAX(CASE WHEN m.tipo = 'ENTRADA' THEN disp.nombre END)        AS dispositivo_entrada,
-      MAX(CASE WHEN m.tipo = 'SALIDA'  THEN disp.nombre END)        AS dispositivo_salida,
-      COALESCE(
-        MAX(CASE WHEN m.tipo = 'ENTRADA' THEN m.ip END),
-        MAX(m.ip)
-      )                                                              AS ip
+      m.hora,
+      m.tipo,
+      disp.nombre        AS dispositivo_nombre,
+      m.ip
     FROM marcas m
     INNER JOIN usuarios      u    ON m.usuario_id     = u.id
     LEFT  JOIN departamentos d    ON u.departamento_id = d.id
     LEFT  JOIN dispositivos  disp ON m.dispositivo_id  = disp.id
     ${clausulaWhere}
-    GROUP BY u.id, u.nombre_completo, d.nombre, m.fecha
-    ORDER BY m.fecha DESC, u.nombre_completo ASC
+    ORDER BY m.fecha DESC, m.hora DESC, u.nombre_completo ASC
   `;
 
   const [rows] = await pool.query(sql, valores);

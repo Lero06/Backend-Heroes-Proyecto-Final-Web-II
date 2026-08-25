@@ -14,7 +14,7 @@ formatos: JSON, XML y PDF.
 //////////////////////////////////////////////////////////
 */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { obtenerLinksNav } from '../utils/navLinks';
 import { apiFetch } from '../api/client.js';
@@ -45,17 +45,50 @@ export default function Reportes() {
   });
 
   const [filas, setFilas] = useState([]);
+  const [seleccionados, setSeleccionados] = useState(new Set());
   const [departamentos, setDepartamentos] = useState([]);
+  const [empresa, setEmpresa] = useState('Universidad Técnica Nacional');
   const [cargando, setCargando] = useState(false);
   const [mensajeBusqueda, setMensajeBusqueda] = useState('');
   const [error, setError] = useState('');
   const [buscado, setBuscado] = useState(false);
 
+  // Filas que se exportaran: las seleccionadas, o todas si no hay seleccion
+  const filasAExportar = seleccionados.size > 0
+    ? filas.filter((f) => seleccionados.has(f.id))
+    : filas;
+
+  const toggleSeleccion = (id) => {
+    setSeleccionados((prev) => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const toggleTodos = () => {
+    setSeleccionados(
+      seleccionados.size === filas.length && filas.length > 0
+        ? new Set()
+        : new Set(filas.map((f) => f.id))
+    );
+  };
+
+  const todosSeleccionados = filas.length > 0 && seleccionados.size === filas.length;
+  const algunoSeleccionado = seleccionados.size > 0 && seleccionados.size < filas.length;
+
   useEffect(() => {
     apiFetch('/departamentos').then((respuesta) => {
       if (respuesta.ok) setDepartamentos(respuesta.data);
     });
+
+    apiFetch('/configuracion/nombre_institucion').then((respuesta) => {
+      if (respuesta.ok && respuesta.data?.valor) {
+        setEmpresa(respuesta.data.valor);
+      }
+    });
   }, []);
+
 
   const manejarCambioFiltro = (e) => {
     setFiltros({ ...filtros, [e.target.name]: e.target.value });
@@ -64,6 +97,7 @@ export default function Reportes() {
   const limpiarFiltros = () => {
     setFiltros({ usuario: '', anio: '', mes: '', dia: '', departamento: '' });
     setFilas([]);
+    setSeleccionados(new Set());
     setBuscado(false);
     setMensajeBusqueda('');
     setError('');
@@ -87,6 +121,7 @@ export default function Reportes() {
     }
 
     setFilas(respuesta.data);
+    setSeleccionados(new Set());
     setMensajeBusqueda(
       respuesta.data.length === 0
         ? 'No se encontraron marcas con los filtros aplicados.'
@@ -94,13 +129,32 @@ export default function Reportes() {
     );
   }, [filtros]);
 
+  // Cargar la tabla automaticamente al entrar a la pagina (solo al montar)
+  const cargaInicialHecha = useRef(false);
+  useEffect(() => {
+    if (!cargaInicialHecha.current) {
+      cargaInicialHecha.current = true;
+      buscar();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [descargando, setDescargando] = useState(null); // 'json' | 'xml' | 'pdf' | null
 
-  const descargarJSON = async () => {
+  // Metadatos comunes para las exportaciones
+  const metaExport = () => ({
+    empresa,
+    generado_por: `${usuario?.nombre_completo || usuario?.usuario || 'Usuario'}${
+      usuario?.correo ? ` (${usuario.correo})` : ''
+    }`,
+  });
+
+  // JSON: generado en el cliente a partir de las filas ya cargadas
+  const descargarJSON = () => {
     try {
       setDescargando('json');
       setError('');
-      await exportarReporteJSON(filtros);
+      exportarReporteJSON(filasAExportar, metaExport());
     } catch (err) {
       setError(err.message || 'Error al exportar a JSON');
     } finally {
@@ -108,11 +162,12 @@ export default function Reportes() {
     }
   };
 
-  const descargarXML = async () => {
+  // XML: generado en el cliente a partir de las filas ya cargadas
+  const descargarXML = () => {
     try {
       setDescargando('xml');
       setError('');
-      await exportarReporteXML(filtros);
+      exportarReporteXML(filasAExportar, metaExport());
     } catch (err) {
       setError(err.message || 'Error al exportar a XML');
     } finally {
@@ -120,11 +175,13 @@ export default function Reportes() {
     }
   };
 
+  // PDF: usa el backend pasando los IDs seleccionados (o todos si no hay seleccion)
   const descargarPDF = async () => {
     try {
       setDescargando('pdf');
       setError('');
-      await exportarReportePDF(filtros);
+      const ids = seleccionados.size > 0 ? [...seleccionados] : null;
+      await exportarReportePDF(filtros, ids);
     } catch (err) {
       setError(err.message || 'Error al exportar a PDF');
     } finally {
@@ -133,18 +190,6 @@ export default function Reportes() {
   };
 
   if (!usuario) return null;
-
-  if (usuario.rol !== 'administrador') {
-    return (
-      <div className="container" style={{ maxWidth: '600px', marginTop: '4rem' }}>
-        <Alert
-          color="rojo"
-          titulo="Acceso denegado."
-          texto="No tiene permisos para ver esta sección."
-        />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -157,6 +202,9 @@ export default function Reportes() {
 
       <div className="container-fluid px-4">
         <Titulo tipografia="h2" texto="Reporte de Marcas" color_text="negro" alineado="centro" />
+        <div className="text-center text-muted small mb-3">
+          <span className="fw-semibold text-primary">{empresa}</span> — Generado por: <strong>{usuario.nombre_completo || usuario.usuario}</strong>
+        </div>
 
         <div className="mb-4">
         <Card
@@ -283,25 +331,50 @@ export default function Reportes() {
             chil_body={
               <Tabla
                 columnas={[
+                  // Encabezado con checkbox "seleccionar todo"
+                  <input
+                    key="chk-all"
+                    type="checkbox"
+                    checked={todosSeleccionados}
+                    ref={(el) => { if (el) el.indeterminate = algunoSeleccionado; }}
+                    onChange={toggleTodos}
+                    title={todosSeleccionados ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                    style={{ width: 16, height: 16, cursor: 'pointer' }}
+                  />,
                   'Usuario',
                   'Departamento',
                   'Fecha',
-                  'Hora Entrada',
-                  'Hora Salida',
-                  'Disp. Entrada',
-                  'Disp. Salida',
-                  'IP'
+                  'Hora',
+                  'Tipo',
+                  'Dispositivo',
+                  'IP',
                 ]}
               >
                 {filas.map((fila, idx) => (
-                  <tr key={`${fila.usuario_id}-${fila.fecha}-${idx}`} style={{ color: '#000000' }}>
+                  <tr
+                    key={`${fila.id ?? idx}`}
+                    style={{ color: '#000000', backgroundColor: seleccionados.has(fila.id) ? '#e8f4fd' : '' }}
+                    onClick={() => toggleSeleccion(fila.id)}
+                    className="cursor-pointer"
+                  >
+                    <td className="text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={seleccionados.has(fila.id)}
+                        onChange={() => toggleSeleccion(fila.id)}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                    </td>
                     <td style={{ color: '#000000' }}>{fila.nombre_completo}</td>
                     <td style={{ color: '#000000' }}>{fila.departamento ?? '—'}</td>
                     <td style={{ color: '#000000' }}>{fila.fecha ? String(fila.fecha).slice(0, 10) : '—'}</td>
-                    <td style={{ color: '#000000' }}>{fila.hora_entrada ?? '—'}</td>
-                    <td style={{ color: '#000000' }}>{fila.hora_salida ?? '—'}</td>
-                    <td style={{ color: '#000000' }}>{fila.dispositivo_entrada ?? '—'}</td>
-                    <td style={{ color: '#000000' }}>{fila.dispositivo_salida ?? '—'}</td>
+                    <td style={{ color: '#000000' }}>{fila.hora ?? '—'}</td>
+                    <td style={{ color: '#000000' }}>
+                      <span className={`badge ${fila.tipo === 'ENTRADA' ? 'bg-success' : 'bg-primary'} px-2 py-1`}>
+                        {fila.tipo ?? '—'}
+                      </span>
+                    </td>
+                    <td style={{ color: '#000000' }}>{fila.dispositivo_nombre ?? '—'}</td>
                     <td style={{ color: '#000000' }}>{fila.ip ?? '—'}</td>
                   </tr>
                 ))}
@@ -309,7 +382,19 @@ export default function Reportes() {
             }
           />
 
-          <div className="row g-3 mt-1 mb-4">
+          {/* Boton para limpiar seleccion si hay elementos marcados */}
+          {seleccionados.size > 0 && (
+            <div className="d-flex justify-content-start mt-2 mb-1 px-1">
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setSeleccionados(new Set())}
+              >
+                Limpiar selección
+              </button>
+            </div>
+          )}
+
+          <div className="row g-3 mt-0 mb-4">
             <div className="col-md-4">
               <Button
                 id="btn-exportar-xml"

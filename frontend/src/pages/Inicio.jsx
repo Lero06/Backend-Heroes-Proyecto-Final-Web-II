@@ -212,68 +212,71 @@ export default function Inicio() {
         {/* ============================================================== */}
         {/* FILA 1: WIDGET DE ASISTENCIA RÁPIDA + ACCESOS CLAVE            */}
         {/* ============================================================== */}
-        <div className="row g-4 mb-4">
+        <div className="row g-4 mb-4 align-items-stretch">
           {/* Widget de Asistencia en Vivo */}
-          <div className="col-12 col-lg-6">
+          <div className="col-12 col-lg-6 d-flex flex-column">
             <Card
               responsivo={true}
               card_width="100%"
+              className="h-100"
               titulo="Control de Asistencia Rápida"
               chil_body={
-                <div className="p-2">
-                  <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <div>
-                      <small className="text-muted d-block">Estado actual de jornada:</small>
-                      <span
-                        className={`badge ${
-                          dentroJornada ? 'bg-success' : 'bg-secondary'
-                        } fs-6 px-3 py-2 rounded-pill`}
-                      >
-                        {dentroJornada ? 'DENTRO (En Jornada)' : 'FUERA (Sin Marca Activa)'}
-                      </span>
+                <div className="p-2 d-flex flex-column justify-content-between h-100">
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                      <div>
+                        <small className="text-muted d-block">Estado actual de jornada:</small>
+                        <span
+                          className={`badge ${
+                            dentroJornada ? 'bg-success' : 'bg-secondary'
+                          } fs-6 px-3 py-2 rounded-pill`}
+                        >
+                          {dentroJornada ? 'DENTRO (En Jornada)' : 'FUERA (Sin Marca Activa)'}
+                        </span>
+                      </div>
+                      <div className="text-end">
+                        <small className="text-muted d-block">Red IP:</small>
+                        <span className="font-monospace small">
+                          {ipCliente}{' '}
+                          {ipValida ? (
+                            <span className="badge bg-success">✓</span>
+                          ) : (
+                            <span className="badge bg-danger">✕</span>
+                          )}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-end">
-                      <small className="text-muted d-block">Red IP:</small>
-                      <span className="font-monospace small">
-                        {ipCliente}{' '}
-                        {ipValida ? (
-                          <span className="badge bg-success">✓</span>
-                        ) : (
-                          <span className="badge bg-danger">✕</span>
-                        )}
-                      </span>
-                    </div>
+
+                    {dispActivoObj && (
+                      <div className="p-2 mb-3 bg-light rounded border d-flex justify-content-between align-items-center small">
+                        <span>
+                          <i className="bi bi-laptop me-1 text-primary"></i>
+                          Dispositivo: <strong>{dispActivoObj.nombre}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 small text-decoration-none"
+                          onClick={() => navigate('/marcas')}
+                        >
+                          Cambiar en Marcas →
+                        </button>
+                      </div>
+                    )}
+
+                    {mensajeMarca && (
+                      <div className="mb-3">
+                        <Alert
+                          color={mensajeMarca.tipo}
+                          fondoBlanco={true}
+                          texto={mensajeMarca.texto}
+                          dismissible={true}
+                          onDismiss={() => setMensajeMarca(null)}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {dispActivoObj && (
-                    <div className="p-2 mb-3 bg-light rounded border d-flex justify-content-between align-items-center small">
-                      <span>
-                        <i className="bi bi-laptop me-1 text-primary"></i>
-                        Dispositivo: <strong>{dispActivoObj.nombre}</strong>
-                      </span>
-                      <button
-                        type="button"
-                        className="btn btn-link p-0 small text-decoration-none"
-                        onClick={() => navigate('/marcas')}
-                      >
-                        Cambiar en Marcas →
-                      </button>
-                    </div>
-                  )}
-
-                  {mensajeMarca && (
-                    <div className="mb-3">
-                      <Alert
-                        color={mensajeMarca.tipo}
-                        fondoBlanco={true}
-                        texto={mensajeMarca.texto}
-                        dismissible={true}
-                        onDismiss={() => setMensajeMarca(null)}
-                      />
-                    </div>
-                  )}
-
-                  <div className="d-flex gap-2">
+                  <div className="d-flex gap-2 mt-3">
                     <Button
                       color={esEntrada ? 'verde' : 'rojo'}
                       tamano="mediano"
@@ -295,10 +298,11 @@ export default function Inicio() {
           </div>
 
           {/* Tarjeta de Atajos Rápidos */}
-          <div className="col-12 col-lg-6">
+          <div className="col-12 col-lg-6 d-flex flex-column">
             <Card
               responsivo={true}
               card_width="100%"
+              className="h-100"
               titulo="Acciones Rápidas del Sistema"
               chil_body={
                 <div className="row g-2 p-1">

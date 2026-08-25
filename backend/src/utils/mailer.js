@@ -17,6 +17,7 @@ Requiere las variables de entorno:
 //////////////////////////////////////////////////////////
 */
 
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
 
 /*

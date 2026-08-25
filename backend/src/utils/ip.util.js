@@ -7,10 +7,10 @@ Autor: Marco Vásquez
 Fecha: 22/08/2026
 Modulo: Marcas y Dispositivos / Utilidades de Red
 Descripcion:
-Helper para normalizar la direccion IP del cliente (removiendo
-prefijos IPv6 como ::ffff:) y comprobar si se encuentra dentro
-del rango de IP permitido configurado en la base de datos
-(formato CIDR como 0.0.0.0/0, 192.168.1.0/24 o IP exacta).
+Helper para extraer y normalizar la direccion IP real del cliente
+considerando cadenas de proxys (Vercel, Railway, Cloudflare, Nginx)
+y comprobar si se encuentra dentro del rango de IP permitido
+configurado en la base de datos (formato CIDR o IP exacta).
 //////////////////////////////////////////////////////////
 */
 
@@ -22,7 +22,7 @@ del rango de IP permitido configurado en la base de datos
  */
 export function normalizarIp(ip) {
   if (!ip) return '127.0.0.1';
-  let limpia = ip.trim();
+  let limpia = String(ip).trim();
   if (limpia.startsWith('::ffff:')) {
     limpia = limpia.replace('::ffff:', '');
   }
@@ -30,6 +30,31 @@ export function normalizarIp(ip) {
     limpia = '127.0.0.1';
   }
   return limpia;
+}
+
+/**
+ * Extrae la IP real del cliente final inspeccionando la cadena de encabezados de proxys.
+ * En cadenas como X-Forwarded-For: "201.192.10.45, 152.233.23.193", la PRIMERA IP
+ * siempre pertenece al cliente real originario de la peticion.
+ * @param {object} req - Objeto Request de Express.
+ * @returns {string} IP limpia del cliente real.
+ */
+export function extraerIpCliente(req) {
+  let rawIp =
+    req.headers['cf-connecting-ip'] ||
+    req.headers['x-real-ip'] ||
+    req.headers['x-client-ip'];
+
+  if (!rawIp && req.headers['x-forwarded-for']) {
+    const listaFwd = String(req.headers['x-forwarded-for']).split(',');
+    rawIp = listaFwd[0].trim();
+  }
+
+  if (!rawIp) {
+    rawIp = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+  }
+
+  return normalizarIp(rawIp);
 }
 
 /**
@@ -69,9 +94,9 @@ function perteneceACidr(ipCliente, cidr) {
 
 /**
  * Comprueba si la IP del cliente esta autorizada segun el rango o lista de rangos configurados.
- * @param {string} ipClienteRaw - IP recibida en req.ip.
+ * @param {string} ipClienteRaw - IP recibida o extraida del cliente.
  * @param {string} rangoConfigurado - Rango o IP de la BD (ej. '0.0.0.0/0', '192.168.1.0/24', '127.0.0.1').
- * @returns {boolean} true si la IP esta dentro de los rangos permitidos, false en caso contrario.
+ * @returns {boolean} true si la IP esta dentro de los rangos permitidos.
  */
 export function esIpPermitida(ipClienteRaw, rangoConfigurado) {
   const ipCliente = normalizarIp(ipClienteRaw);
@@ -80,7 +105,6 @@ export function esIpPermitida(ipClienteRaw, rangoConfigurado) {
     return true;
   }
 
-  // Soporta multiples rangos separados por coma
   const rangos = rangoConfigurado.split(',').map((r) => r.trim());
 
   for (const rango of rangos) {

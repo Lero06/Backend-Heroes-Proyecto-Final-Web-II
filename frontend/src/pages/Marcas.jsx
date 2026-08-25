@@ -22,12 +22,10 @@ import { marcarAsistencia, obtenerEstadoActual, obtenerMisMarcas } from '../api/
 import {
   registrarDispositivo,
   seleccionarDispositivo,
-  deseleccionarDispositivo,
   obtenerMisDispositivos,
   cambiarEstadoDispositivo,
   eliminarDispositivo,
 } from '../api/dispositivos.js';
-import { obtenerRangoIp, actualizarRangoIp } from '../api/configuracion.js';
 
 import Navbar from '../components/Navbar.jsx';
 import Card from '../components/Card.jsx';
@@ -39,7 +37,7 @@ import Tabla from '../components/Tabla.jsx';
 export default function Marcas() {
   const { usuario, logout } = useAuth();
 
-  // Pestaña activa ('asistencia', 'dispositivos', 'configuracion')
+  // Pestaña activa ('asistencia' o 'dispositivos')
   const [tabActiva, setTabActiva] = useState('asistencia');
 
   // Estado de Asistencia
@@ -54,16 +52,6 @@ export default function Marcas() {
   const [nuevoDispositivo, setNuevoDispositivo] = useState({ nombre: '', descripcion: '' });
   const [cargandoDispositivo, setCargandoDispositivo] = useState(false);
   const [mensajeDispositivo, setMensajeDispositivo] = useState(null);
-  const [modalEliminarDisp, setModalEliminarDisp] = useState({
-    abierto: false,
-    dispositivo: null,
-    eliminando: false,
-  });
-
-  // Estado de Configuración IP (Solo Admin)
-  const [rangoIp, setRangoIp] = useState('0.0.0.0/0');
-  const [cargandoIpConfig, setCargandoIpConfig] = useState(false);
-  const [mensajeIpConfig, setMensajeIpConfig] = useState(null);
 
   // Reloj en vivo
   useEffect(() => {
@@ -86,23 +74,12 @@ export default function Marcas() {
     if (resDisp.ok) setDispositivos(resDisp.data);
   }, []);
 
-  // Cargar configuración de IP (si es admin)
-  const cargarConfiguracionIp = useCallback(async () => {
-    const resIp = await obtenerRangoIp();
-    if (resIp.ok && resIp.data) {
-      setRangoIp(resIp.data.valor);
-    }
-  }, []);
-
   useEffect(() => {
     if (usuario) {
       cargarDatosMarcas();
       cargarDispositivos();
-      if (usuario.rol === 'administrador') {
-        cargarConfiguracionIp();
-      }
     }
-  }, [usuario, cargarDatosMarcas, cargarDispositivos, cargarConfiguracionIp]);
+  }, [usuario, cargarDatosMarcas, cargarDispositivos]);
 
   // Ejecutar Marca (ENTRADA / SALIDA)
   const ejecutarMarca = async () => {
@@ -160,16 +137,6 @@ export default function Marcas() {
     }
   };
 
-  // Desmarcar / Desvincular dispositivo del navegador actual
-  const handleDeseleccionarDispositivo = async () => {
-    const res = await deseleccionarDispositivo();
-    if (res.ok) {
-      cargarDispositivos();
-      cargarDatosMarcas();
-      setMensajeDispositivo({ tipo: 'verde', texto: 'Dispositivo desmarcado de este navegador.' });
-    }
-  };
-
   // Cambiar estado del dispositivo
   const toggleEstadoDispositivo = async (id, estadoActual) => {
     const nuevoEstado = estadoActual === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
@@ -181,77 +148,11 @@ export default function Marcas() {
   };
 
   // Eliminar dispositivo
-  const confirmarEliminarDispositivo = async () => {
-    const disp = modalEliminarDisp.dispositivo;
-    if (!disp) return;
-
-    setModalEliminarDisp((prev) => ({ ...prev, eliminando: true }));
-    const res = await eliminarDispositivo(disp.id);
-    setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false });
-
+  const handleEliminarDispositivo = async (id) => {
+    if (!window.confirm('¿Está seguro de eliminar este dispositivo autorizado?')) return;
+    const res = await eliminarDispositivo(id);
     if (res.ok) {
       cargarDispositivos();
-      cargarDatosMarcas();
-    } else {
-      setMensajeDispositivo({ tipo: 'rojo', texto: res.message || 'Error al eliminar el dispositivo' });
-    }
-  };
-
-  // Actualizar rango de IP permitido (Administrador)
-  const guardarRangoIp = async (e) => {
-    e.preventDefault();
-    setMensajeIpConfig(null);
-
-    const valor = rangoIp.trim();
-
-    // Validar formato: IP simple, CIDR (x.x.x.x/n), comodín o múltiples separados por coma
-    const patronIp = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const patronCidr = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
-    const esComodin = valor === '*' || valor === '0.0.0.0/0';
-
-    const fragmentos = valor.split(',').map((f) => f.trim()).filter(Boolean);
-
-    if (fragmentos.length === 0) {
-      setMensajeIpConfig({ tipo: 'rojo', texto: 'El campo de rango IP no puede estar vacío.' });
-      return;
-    }
-
-    const todosValidos = fragmentos.every((f) => {
-      if (f === '*' || f === '0.0.0.0/0' || f === '::1') return true;
-      if (patronIp.test(f)) {
-        // Verificar que cada octeto sea 0-255
-        return f.split('.').every((oct) => Number(oct) >= 0 && Number(oct) <= 255);
-      }
-      if (patronCidr.test(f)) {
-        const [ip, prefijo] = f.split('/');
-        const prefijoNum = Number(prefijo);
-        const octetos = ip.split('.');
-        return (
-          prefijoNum >= 0 && prefijoNum <= 32 &&
-          octetos.every((oct) => Number(oct) >= 0 && Number(oct) <= 255)
-        );
-      }
-      return false;
-    });
-
-    if (!todosValidos) {
-      setMensajeIpConfig({
-        tipo: 'rojo',
-        texto: 'Formato de IP inválido. Use una IP (192.168.1.1), un rango CIDR (192.168.1.0/24) o varias separadas por coma.',
-      });
-      return;
-    }
-
-    setCargandoIpConfig(true);
-    const res = await actualizarRangoIp(valor);
-    setCargandoIpConfig(false);
-
-    setMensajeIpConfig({
-      tipo: res.ok ? 'verde' : 'rojo',
-      texto: res.ok ? 'Rango de red IP actualizado correctamente.' : (res.message || 'Error al guardar el rango de IP.'),
-    });
-
-    if (res.ok) {
       cargarDatosMarcas();
     }
   };
@@ -271,6 +172,14 @@ export default function Marcas() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/marcas')}
+        buttonContent={
+          <Button
+            color="rojo"
+            tamano="pequeño"
+            onClick={logout}
+            texto="Cerrar sesion"
+          />
+        }
       />
 
       <div className="container-fluid px-4 py-2">
@@ -289,14 +198,6 @@ export default function Marcas() {
             >
               <i className="bi bi-laptop me-2"></i> Dispositivos Autorizados
             </button>
-            {usuario.rol === 'administrador' && (
-              <button
-                className={`btn btn-${tabActiva === 'configuracion' ? 'primary' : 'outline-primary'} px-4 py-2 fw-bold`}
-                onClick={() => setTabActiva('configuracion')}
-              >
-                <i className="bi bi-gear me-2"></i> Configuración IP
-              </button>
-            )}
           </div>
         </div>
 
@@ -552,34 +453,31 @@ export default function Marcas() {
                               {d.estado}
                             </span>
                           </td>
-                          <td className="text-center align-middle" style={{ whiteSpace: 'nowrap', minWidth: '270px' }}>
-                            <div className="d-flex justify-content-center gap-2 align-items-center">
-                              <Button
-                                color="azul"
-                                tamano="pequeño"
-                                texto="Seleccionar"
-                                disabled={d.es_actual || d.estado !== 'ACTIVO'}
-                                title={
-                                  d.es_actual
-                                    ? 'Ya está en uso en este navegador'
-                                    : d.estado !== 'ACTIVO'
-                                    ? 'Activa el dispositivo primero'
-                                    : 'Usar en este navegador'
-                                }
-                                onClick={() => handleSeleccionarDispositivo(d.id)}
-                              />
-                              <Button
-                                color={d.estado === 'ACTIVO' ? 'amarillo' : 'verde'}
-                                tamano="pequeño"
-                                texto={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                          <td className="text-center align-middle">
+                            <div className="btn-group btn-group-sm" role="group">
+                              {!d.es_actual && d.estado === 'ACTIVO' && (
+                                <button
+                                  className="btn btn-outline-primary fw-semibold"
+                                  title="Usar en este navegador"
+                                  onClick={() => handleSeleccionarDispositivo(d.id)}
+                                >
+                                  <i className="bi bi-box-arrow-in-down me-1"></i> Seleccionar
+                                </button>
+                              )}
+                              <button
+                                className={`btn btn-${d.estado === 'ACTIVO' ? 'warning text-dark' : 'success'}`}
+                                title={d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
                                 onClick={() => toggleEstadoDispositivo(d.id, d.estado)}
-                              />
-                              <Button
-                                color="rojo"
-                                tamano="pequeño"
-                                texto="Eliminar"
-                                onClick={() => setModalEliminarDisp({ abierto: true, dispositivo: d, eliminando: false })}
-                              />
+                              >
+                                {d.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
+                              </button>
+                              <button
+                                className="btn btn-danger"
+                                title="Eliminar"
+                                onClick={() => handleEliminarDispositivo(d.id)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -588,100 +486,6 @@ export default function Marcas() {
                   )
                 }
               />
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* PESTAÑA 3: CONFIGURACIÓN IP (SOLO ADMINISTRADOR)              */}
-        {/* ============================================================== */}
-        {tabActiva === 'configuracion' && usuario.rol === 'administrador' && (
-          <div className="row justify-content-center">
-            <div className="col-12 col-md-6">
-              <Card
-                responsivo={true}
-                card_width="100%"
-                titulo="Configuración de Red IP Autorizada"
-                texto_alineado="left"
-                chil_body={
-                  <form onSubmit={guardarRangoIp}>
-                    <p className="text-muted small mb-3">
-                      Establezca la dirección IP o notación CIDR permitida para registrar marcas (ej. <code>0.0.0.0/0</code>{' '}
-                      permite cualquier red, <code>127.0.0.1</code> solo local, o <code>192.168.1.0/24</code>).
-                    </p>
-
-                    <div className="mb-3">
-                      <Input
-                        label="Rango de IP Permitido (rango_ip_permitido) *"
-                        placeholder="Ej. 0.0.0.0/0 o 192.168.1.0/24"
-                        value={rangoIp}
-                        onChange={(e) => setRangoIp(e.target.value)}
-                      />
-                    </div>
-
-                    {mensajeIpConfig && (
-                      <div className="mb-3">
-                        <Alert
-                          color={mensajeIpConfig.tipo}
-                          fondoBlanco={true}
-                          texto={mensajeIpConfig.texto}
-                          dismissible={true}
-                          onDismiss={() => setMensajeIpConfig(null)}
-                        />
-                      </div>
-                    )}
-
-                    <Button tipo="submit" color="azul" cargando={cargandoIpConfig} className="w-100 fw-bold">
-                      <i className="bi bi-shield-lock me-2"></i> Guardar Rango de IP
-                    </Button>
-                  </form>
-                }
-              />
-            </div>
-          </div>
-        )}
-        {/* ========== MODAL CONFIRMACIÓN ELIMINAR DISPOSITIVO ========== */}
-        {modalEliminarDisp.abierto && modalEliminarDisp.dispositivo && (
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}
-          >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content shadow">
-                <div className="modal-header bg-danger text-white">
-                  <h5 className="modal-title mb-0">Confirmar Eliminación de Dispositivo</h5>
-                  <button
-                    type="button"
-                    className="btn-close btn-close-white"
-                    onClick={() => setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false })}
-                  ></button>
-                </div>
-                <div className="modal-body py-4">
-                  <p className="mb-2 fs-6">
-                    ¿Está seguro de eliminar el dispositivo autorizado <strong>"{modalEliminarDisp.dispositivo.nombre}"</strong>?
-                  </p>
-                  <p className="small text-muted mb-0">
-                    Descripción: {modalEliminarDisp.dispositivo.descripcion || 'Sin descripción'}. Esta acción no se puede deshacer.
-                  </p>
-                </div>
-                <div className="modal-footer bg-light">
-                  <Button
-                    color="gris"
-                    tamano="pequeño"
-                    texto="Cancelar"
-                    disabled={modalEliminarDisp.eliminando}
-                    onClick={() => setModalEliminarDisp({ abierto: false, dispositivo: null, eliminando: false })}
-                  />
-                  <Button
-                    color="rojo"
-                    tamano="pequeño"
-                    texto="Eliminar"
-                    cargando={modalEliminarDisp.eliminando}
-                    onClick={confirmarEliminarDispositivo}
-                  />
-                </div>
-              </div>
             </div>
           </div>
         )}

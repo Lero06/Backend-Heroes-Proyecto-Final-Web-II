@@ -3,19 +3,19 @@
 CABEZA DE ARCHIVO
 //////////////////////////////////////////////////////////
 Archivo: Configuracion.jsx
-Autor: Jose Rodolfo Chaves Herrera
+Autor: Jose Rodolfo Chaves Herrera / Actualizado por Marco Vásquez
 Fecha: 24/08/2026
 Modulo: Frontend - Configuracion del Sistema
 Descripcion:
-Pantalla de administracion para los parametros institucionales y tecnicos
-del sistema: nombre oficial de la institucion, duracion maxima de sesion
-y limite de almacenamiento para imagenes/archivos de equipos.
+Pantalla de administracion centralizada para los parametros institucionales,
+tecnicos y de red IP del sistema: nombre oficial de la institucion, duracion
+maxima de sesion, limite de almacenamiento y rango de IP permitido para marcas.
 //////////////////////////////////////////////////////////
 */
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { obtenerLinksNav } from '../utils/navLinks';
+import { obtenerLinksNav } from '../utils/navLinks.js';
 import {
   obtenerConfiguraciones,
   actualizarConfiguracion,
@@ -42,11 +42,12 @@ export default function Configuracion() {
   // Lista completa de configuraciones desde la BD
   const [listaConfiguraciones, setListaConfiguraciones] = useState([]);
 
-  // Estados de los campos principales de configuración (sin IPs)
+  // Estados de los campos principales de configuración (incluyendo rango_ip_permitido)
   const [config, setConfig] = useState({
     nombre_institucion: 'Universidad Técnica Nacional',
     tiempo_max_sesion_min: '120',
     tamano_max_archivo_mb: '5',
+    rango_ip_permitido: '0.0.0.0/0',
   });
 
   // Cargar configuraciones de la BD
@@ -60,7 +61,10 @@ export default function Configuracion() {
       setListaConfiguraciones(res.data);
       const mapa = {};
       res.data.forEach((item) => {
-        if (item.clave in config || ['nombre_institucion', 'tiempo_max_sesion_min', 'tamano_max_archivo_mb'].includes(item.clave)) {
+        if (
+          item.clave in config ||
+          ['nombre_institucion', 'tiempo_max_sesion_min', 'tamano_max_archivo_mb', 'rango_ip_permitido'].includes(item.clave)
+        ) {
           mapa[item.clave] = item.valor;
         }
       });
@@ -81,7 +85,7 @@ export default function Configuracion() {
     setConfig((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  // Guardar configuración general
+  // Guardar configuración general (incluyendo IP)
   const manejarGuardar = async (e) => {
     e.preventDefault();
     setError('');
@@ -105,6 +109,11 @@ export default function Configuracion() {
       return;
     }
 
+    if (!config.rango_ip_permitido.trim()) {
+      setError('El rango de IP permitido es requerido.');
+      return;
+    }
+
     setGuardando(true);
 
     try {
@@ -113,6 +122,7 @@ export default function Configuracion() {
         actualizarConfiguracion('nombre_institucion', config.nombre_institucion.trim()),
         actualizarConfiguracion('tiempo_max_sesion_min', String(tiempoSesion)),
         actualizarConfiguracion('tamano_max_archivo_mb', String(tamanoArchivo)),
+        actualizarConfiguracion('rango_ip_permitido', config.rango_ip_permitido.trim()),
       ];
 
       const resultados = await Promise.all(promesas);
@@ -122,7 +132,7 @@ export default function Configuracion() {
       if (algunError) {
         setError(algunError.message || 'Error al actualizar algunos parámetros.');
       } else {
-        setExito('Parámetros del sistema guardados y aplicados exitosamente.');
+        setExito('Parámetros del sistema y rango de IP guardados exitosamente.');
         cargarConfiguracion();
       }
     } catch (err) {
@@ -148,13 +158,21 @@ export default function Configuracion() {
         texto="SIGMA"
         navList={true}
         links={obtenerLinksNav(usuario, '/configuracion')}
+        buttonContent={
+          <Button
+            color="rojo"
+            tamano="pequeño"
+            onClick={logout}
+            texto="Cerrar sesion"
+          />
+        }
       />
 
       <div className="container-fluid px-4 py-2">
         <div className="mb-4">
           <Titulo tipografia="h2" texto="Configuración General del Sistema" color_text="negro" />
           <p className="text-muted">
-            Administra los parámetros institucionales, expiración de sesiones y límites de almacenamiento del servidor.
+            Administra los parámetros institucionales, expiración de sesiones, límites de almacenamiento y rango de red IP autorizada.
           </p>
         </div>
 
@@ -173,7 +191,7 @@ export default function Configuracion() {
               <Card
                 responsivo={true}
                 card_width="100%"
-                titulo="Parámetros Institucionales y de Sistema"
+                titulo="Parámetros Institucionales, de Sistema y Red IP"
                 chil_body={
                   <form onSubmit={manejarGuardar}>
                     {/* 1. Nombre de la Institución */}
@@ -190,7 +208,21 @@ export default function Configuracion() {
                       </small>
                     </div>
 
-                    {/* 2. Tiempo de Sesión */}
+                    {/* 2. Rango de IP Permitido para Marcas */}
+                    <div className="mb-4">
+                      <Input
+                        label="Rango de Red IP Permitido (rango_ip_permitido) *"
+                        placeholder="Ej. 0.0.0.0/0 o 192.168.1.0/24"
+                        value={config.rango_ip_permitido}
+                        onChange={(e) => handleChange('rango_ip_permitido', e.target.value)}
+                        required
+                      />
+                      <small className="text-muted">
+                        Dirección IP o notación CIDR autorizada para marcas de asistencia (ej. <code>0.0.0.0/0</code> para cualquier red, o <code>192.168.1.0/24</code>).
+                      </small>
+                    </div>
+
+                    {/* 3. Tiempo de Sesión */}
                     <div className="mb-4">
                       <Input
                         label="Tiempo Máximo de Sesión (Minutos) *"
@@ -207,7 +239,7 @@ export default function Configuracion() {
                       </small>
                     </div>
 
-                    {/* 3. Tamaño de Archivo */}
+                    {/* 4. Tamaño de Archivo */}
                     <div className="mb-4">
                       <Input
                         label="Tamaño Máximo de Archivos / Imágenes (MB) *"
@@ -271,11 +303,6 @@ export default function Configuracion() {
                         </tr>
                       ))}
                     </Tabla>
-
-                    <div className="alert alert-info py-2 small mt-3 mb-0">
-                      <i className="bi bi-info-circle me-1"></i>
-                      <strong>Rango de IP:</strong> La configuración de red IP para marcas de asistencia se gestiona directamente desde la pestaña <strong>"Configuración IP"</strong> en el módulo de <strong>Marcas</strong>.
-                    </div>
                   </div>
                 }
               />

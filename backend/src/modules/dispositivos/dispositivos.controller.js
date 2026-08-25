@@ -44,7 +44,7 @@ FUNCIONES PRINCIPALES
  * Registra el dispositivo actual para el usuario autenticado.
  * Genera un identificador unico (UUID), guarda el registro en la base de datos
  * y establece una cookie HTTP-Only `dispositivo_id` en la respuesta.
- * @param {object} req - Request de Express (req.usuario.id, req.body).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -80,7 +80,7 @@ export async function registrarDispositivo(req, res, next) {
 /**
  * Vincula un dispositivo previamente registrado al navegador actual
  * actualizando la cookie HTTP-Only `dispositivo_id`.
- * @param {object} req - Request de Express (req.params.id, req.usuario.id).
+ * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
  */
@@ -142,7 +142,7 @@ export async function listarMisDispositivos(req, res, next) {
 }
 
 /**
- * Cambia el estado (ACTIVO o INACTIVO) de un dispositivo perteneciente al usuario.
+ * Cambia el estado (ACTIVO o INACTIVO) de un dispositivo.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.
@@ -174,7 +174,7 @@ export async function cambiarEstadoDispositivo(req, res, next) {
 }
 
 /**
- * Elimina un dispositivo autorizado de un usuario.
+ * Elimina un dispositivo autorizado.
  * @param {object} req - Request de Express.
  * @param {object} res - Response de Express.
  * @param {Function} next - Middleware de manejo de errores.

@@ -8,11 +8,12 @@ Fecha: 22/08/2026
 Modulo: Configuración del Sistema
 Descripcion:
 Logica de negocio para consultar y modificar configuraciones del sistema,
-especialmente el rango de IP permitido (`rango_ip_permitido`).
+especialmente la validacion estricta del rango de IP permitido (`rango_ip_permitido`).
 //////////////////////////////////////////////////////////
 */
 
 import { ok, error } from '../../utils/response.js';
+import { validarFormatoRangoIp } from '../../utils/ip.util.js';
 import * as configuracionModel from './configuracion.model.js';
 
 /**
@@ -43,25 +44,28 @@ export async function obtenerPorClave(req, res, next) {
 
 /**
  * Actualiza el valor de una clave de configuracion (Requiere rol administrador).
+ * Si la clave es `rango_ip_permitido`, valida estrictamente que la notacion IP / CIDR sea valida.
  */
 export async function actualizar(req, res, next) {
   try {
     const { clave } = req.params;
     const { valor } = req.body;
 
+    if (clave === 'rango_ip_permitido') {
+      if (!validarFormatoRangoIp(valor)) {
+        return error(
+          res,
+          'El formato de IP ingresado no es válido. Debe usar notación IPv4 completa (ej. 192.168.1.15) o rango CIDR (ej. 192.168.1.0/24 o 0.0.0.0/0).',
+          400
+        );
+      }
+    }
+
     const actualizado = await configuracionModel.actualizarValor(clave, valor);
     if (!actualizado) return error(res, 'Configuración no encontrada o no modificada', 400);
 
     const configActualizada = await configuracionModel.obtenerPorClave(clave);
-    const MENSAJES = {
-      rango_ip_permitido: 'Rango de red IP actualizado correctamente.',
-      nombre_institucion: 'Nombre de institución actualizado correctamente.',
-      tiempo_max_sesion_min: 'Tiempo de sesión actualizado correctamente.',
-      tamano_max_archivo_mb: 'Tamaño máximo de archivos actualizado correctamente.',
-    };
-    const mensaje = MENSAJES[clave] || 'Configuración actualizada correctamente.';
-
-    return ok(res, configActualizada, mensaje);
+    return ok(res, configActualizada, `Configuración "${clave}" actualizada correctamente`);
   } catch (err) {
     next(err);
   }

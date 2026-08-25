@@ -9,7 +9,8 @@ Modulo: Frontend - Configuracion del Sistema
 Descripcion:
 Pantalla de administracion centralizada para los parametros institucionales,
 tecnicos y de red IP del sistema: nombre oficial de la institucion, duracion
-maxima de sesion, limite de almacenamiento y rango de IP permitido para marcas.
+maxima de sesion, limite de almacenamiento y rango de IP permitido para marcas
+con validacion de sintaxis estricta (IPv4 / CIDR completos).
 //////////////////////////////////////////////////////////
 */
 
@@ -29,6 +30,39 @@ import Input from '../components/Input.jsx';
 import Titulo from '../components/Titulo.jsx';
 import Spinner from '../components/Spinner.jsx';
 import Tabla from '../components/Tabla.jsx';
+
+// Validador de formato IPv4 / CIDR en el cliente
+const validarFormatoRangoIp = (rangoTexto) => {
+  if (!rangoTexto || typeof rangoTexto !== 'string') return false;
+  const texto = rangoTexto.trim();
+  if (!texto) return false;
+
+  const rangos = texto.split(',').map((r) => r.trim());
+
+  for (const rango of rangos) {
+    if (rango === '0.0.0.0/0' || rango === '*') continue;
+
+    if (rango.includes('/')) {
+      const partes = rango.split('/');
+      if (partes.length !== 2) return false;
+      const [ipBase, mascaraStr] = partes;
+      if (!/^\d+$/.test(mascaraStr)) return false;
+      const mascara = parseInt(mascaraStr, 10);
+      if (isNaN(mascara) || mascara < 0 || mascara > 32) return false;
+
+      const octetos = ipBase.split('.');
+      if (octetos.length !== 4) return false;
+      if (octetos.some((o) => !/^\d+$/.test(o) || Number(o) < 0 || Number(o) > 255)) return false;
+    } else {
+      if (rango === '::1' || rango === 'localhost') continue;
+      const octetos = rango.split('.');
+      if (octetos.length !== 4) return false;
+      if (octetos.some((o) => !/^\d+$/.test(o) || Number(o) < 0 || Number(o) > 255)) return false;
+    }
+  }
+
+  return true;
+};
 
 export default function Configuracion() {
   const { usuario, logout } = useAuth();
@@ -91,7 +125,7 @@ export default function Configuracion() {
     setError('');
     setExito('');
 
-    // Validaciones
+    // Validaciones de campos
     if (!config.nombre_institucion.trim()) {
       setError('El nombre de la institución es requerido.');
       return;
@@ -109,8 +143,17 @@ export default function Configuracion() {
       return;
     }
 
-    if (!config.rango_ip_permitido.trim()) {
+    // Validar sintaxis de rango de IP
+    const ipTrimmed = config.rango_ip_permitido.trim();
+    if (!ipTrimmed) {
       setError('El rango de IP permitido es requerido.');
+      return;
+    }
+
+    if (!validarFormatoRangoIp(ipTrimmed)) {
+      setError(
+        'El formato de IP ingresado no es válido. Debe ingresar una dirección IPv4 completa (ej. 192.168.1.15) o una subred CIDR (ej. 192.168.1.0/24 o 0.0.0.0/0).'
+      );
       return;
     }
 
@@ -122,7 +165,7 @@ export default function Configuracion() {
         actualizarConfiguracion('nombre_institucion', config.nombre_institucion.trim()),
         actualizarConfiguracion('tiempo_max_sesion_min', String(tiempoSesion)),
         actualizarConfiguracion('tamano_max_archivo_mb', String(tamanoArchivo)),
-        actualizarConfiguracion('rango_ip_permitido', config.rango_ip_permitido.trim()),
+        actualizarConfiguracion('rango_ip_permitido', ipTrimmed),
       ];
 
       const resultados = await Promise.all(promesas);
@@ -218,7 +261,7 @@ export default function Configuracion() {
                         required
                       />
                       <small className="text-muted">
-                        Dirección IP o notación CIDR autorizada para marcas de asistencia (ej. <code>0.0.0.0/0</code> para cualquier red, o <code>192.168.1.0/24</code>).
+                        Dirección IP o notación CIDR autorizada para marcas (ej. <code>0.0.0.0/0</code> para cualquier red, <code>127.0.0.1</code> o <code>192.168.1.0/24</code>).
                       </small>
                     </div>
 
@@ -288,7 +331,7 @@ export default function Configuracion() {
                       Valores actualmente almacenados en la tabla <code>configuracion</code>:
                     </p>
 
-                    <Tabla columnas={['Clave', 'Valor Actual']}>
+                    <Tabla columnas={[{ texto: 'Clave', ancho: '50%' }, { texto: 'Valor Actual', ancho: '50%' }]}>
                       {listaConfiguraciones.map((item) => (
                         <tr key={item.id}>
                           <td>
@@ -296,7 +339,7 @@ export default function Configuracion() {
                             <div className="text-muted small">{item.descripcion || '—'}</div>
                           </td>
                           <td className="align-middle">
-                            <span className="badge bg-light text-dark border font-monospace fs-6">
+                            <span className="badge bg-light text-dark border font-monospace fs-6 text-wrap text-break">
                               {item.valor}
                             </span>
                           </td>
